@@ -43,7 +43,8 @@ export interface CalendarEvent {
 
 export interface Photo {
   id: string;
-  storagePath: string;
+  /** Cloudinary public_id, kept for reference (deletion isn't wired up) */
+  publicId: string;
   url: string;
   caption: string;
   uploadedBy: string;
