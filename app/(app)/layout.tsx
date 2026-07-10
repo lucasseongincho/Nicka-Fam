@@ -14,15 +14,15 @@ export default function AppShellLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { activePersonId } = usePeople();
+  const { hydrated, activePersonId } = usePeople();
 
   useEffect(() => {
-    if (!activePersonId) {
+    if (hydrated && !activePersonId) {
       router.replace("/");
     }
-  }, [activePersonId, router]);
+  }, [hydrated, activePersonId, router]);
 
-  if (!activePersonId) return null;
+  if (!hydrated || !activePersonId) return null;
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-paper">

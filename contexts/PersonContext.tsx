@@ -6,7 +6,6 @@ import {
   useEffect,
   useMemo,
   useState,
-  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
@@ -14,34 +13,17 @@ import { db } from "@/lib/firebase";
 import type { Person } from "@/lib/types";
 
 const STORAGE_KEY = "nickafam_personId";
-const listeners = new Set<() => void>();
-
-function subscribe(callback: () => void) {
-  listeners.add(callback);
-  window.addEventListener("storage", callback);
-  return () => {
-    listeners.delete(callback);
-    window.removeEventListener("storage", callback);
-  };
-}
-
-function getSnapshot() {
-  return localStorage.getItem(STORAGE_KEY);
-}
-
-function getServerSnapshot() {
-  return null;
-}
-
-function writeActivePersonId(personId: string | null) {
-  if (personId) localStorage.setItem(STORAGE_KEY, personId);
-  else localStorage.removeItem(STORAGE_KEY);
-  listeners.forEach((notify) => notify());
-}
 
 interface PersonContextValue {
   people: Person[];
   loading: boolean;
+  /**
+   * True once the client has read localStorage at least once. Consumers must
+   * wait for this before redirecting on activePersonId, otherwise a hard
+   * page load of any inner route (e.g. /calendar) briefly sees
+   * activePersonId as null and bounces to "/" before the real value loads.
+   */
+  hydrated: boolean;
   activePersonId: string | null;
   activePerson: Person | null;
   choosePerson: (personId: string) => void;
@@ -53,11 +35,18 @@ const PersonContext = createContext<PersonContextValue | null>(null);
 export function PersonProvider({ children }: { children: ReactNode }) {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
-  const activePersonId = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot,
-  );
+  const [hydrated, setHydrated] = useState(false);
+  const [activePersonId, setActivePersonId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable client-side; this one-time read (plus hydrated flag) must happen post-mount to avoid an SSR/hydration mismatch, and both must land in the same batch so consumers never see hydrated=true with a stale activePersonId.
+    setActivePersonId(localStorage.getItem(STORAGE_KEY));
+    setHydrated(true);
+
+    const onStorage = () => setActivePersonId(localStorage.getItem(STORAGE_KEY));
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, "people"), orderBy("name"));
@@ -70,8 +59,15 @@ export function PersonProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const choosePerson = (personId: string) => writeActivePersonId(personId);
-  const clearPerson = () => writeActivePersonId(null);
+  const choosePerson = (personId: string) => {
+    localStorage.setItem(STORAGE_KEY, personId);
+    setActivePersonId(personId);
+  };
+
+  const clearPerson = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setActivePersonId(null);
+  };
 
   const activePerson = useMemo(
     () => people.find((p) => p.id === activePersonId) ?? null,
@@ -83,6 +79,7 @@ export function PersonProvider({ children }: { children: ReactNode }) {
       value={{
         people,
         loading,
+        hydrated,
         activePersonId,
         activePerson,
         choosePerson,
