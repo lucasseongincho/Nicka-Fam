@@ -19,6 +19,8 @@ export default function SettlePage({
   const { people } = usePeople();
   const [bill, setBill] = useState<Bill | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
+  const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState(false);
 
   useEffect(() => listenBill(billId, setBill), [billId]);
   useEffect(() => listenRounds(billId, setRounds), [billId]);
@@ -29,6 +31,41 @@ export default function SettlePage({
   }, [people]);
 
   const transfers = useMemo(() => computeSettlement(rounds), [rounds]);
+
+  const handleShare = async () => {
+    if (!bill) return;
+    setSharing(true);
+    setShareError(false);
+    try {
+      const res = await fetch(`/api/bills/${billId}/share-image`);
+      if (!res.ok) throw new Error("image generation failed");
+      const blob = await res.blob();
+      const fileName = `${bill.title.replace(/[^a-z0-9]+/gi, "-")}-settle-up.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
+
+      if (
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({ files: [file], title: bill.title });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        // user cancelled the native share sheet — not an error
+      } else {
+        setShareError(true);
+      }
+    } finally {
+      setSharing(false);
+    }
+  };
 
   if (!bill) {
     return <p className="pt-10 text-center text-ink/40">loading bill...</p>;
@@ -94,9 +131,18 @@ export default function SettlePage({
         })
       )}
 
-      <p className="mt-4 text-center text-[15px] text-ink/50">
-        📸 share as image
-      </p>
+      <button
+        onClick={handleShare}
+        disabled={sharing}
+        className="mt-4 w-full cursor-pointer text-center text-[15px] text-ink/50 hover:text-orange disabled:cursor-wait"
+      >
+        {sharing ? "putting it together..." : "📸 share as image"}
+      </button>
+      {shareError && (
+        <p className="mt-1.5 text-center text-xs text-orange-dark">
+          couldn&apos;t generate the image — try again
+        </p>
+      )}
     </div>
   );
 }
