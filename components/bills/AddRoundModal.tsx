@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { Person } from "@/lib/types";
+import type { Person, Round } from "@/lib/types";
 import { usePeople } from "@/contexts/PersonContext";
-import { addRound } from "@/lib/bills";
+import { addRound, deleteRound, updateRound } from "@/lib/bills";
 import { Modal } from "@/components/ui/Modal";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
@@ -12,19 +12,25 @@ export function AddRoundModal({
   billId,
   billMembers,
   nextOrder,
+  editingRound,
   onClose,
 }: {
   billId: string;
   billMembers: Person[];
   nextOrder: number;
+  editingRound?: Round;
   onClose: () => void;
 }) {
   const { activePersonId } = usePeople();
-  const [label, setLabel] = useState("");
-  const [amount, setAmount] = useState("");
-  const [payerId, setPayerId] = useState(billMembers[0]?.id ?? "");
+  const [label, setLabel] = useState(editingRound?.label ?? "");
+  const [amount, setAmount] = useState(
+    editingRound ? String(editingRound.amount) : "",
+  );
+  const [payerId, setPayerId] = useState(
+    editingRound?.payerId ?? billMembers[0]?.id ?? "",
+  );
   const [participantIds, setParticipantIds] = useState<string[]>(
-    billMembers.map((p) => p.id),
+    editingRound?.participantIds ?? billMembers.map((p) => p.id),
   );
   const [submitting, setSubmitting] = useState(false);
 
@@ -45,21 +51,37 @@ export function AddRoundModal({
   const submit = async () => {
     if (!valid || !activePersonId) return;
     setSubmitting(true);
-    await addRound(billId, {
-      label: label.trim(),
-      amount: amountNum,
-      payerId,
-      participantIds,
-      order: nextOrder,
-      createdBy: activePersonId,
-    });
+    if (editingRound) {
+      await updateRound(billId, editingRound.id, editingRound.amount, {
+        label: label.trim(),
+        amount: amountNum,
+        payerId,
+        participantIds,
+      });
+    } else {
+      await addRound(billId, {
+        label: label.trim(),
+        amount: amountNum,
+        payerId,
+        participantIds,
+        order: nextOrder,
+        createdBy: activePersonId,
+      });
+    }
+    onClose();
+  };
+
+  const remove = async () => {
+    if (!editingRound) return;
+    setSubmitting(true);
+    await deleteRound(billId, editingRound.id, editingRound.amount);
     onClose();
   };
 
   return (
     <Modal onClose={onClose}>
       <p className="mb-4 text-center font-heading text-lg font-semibold text-ink">
-        add a round
+        {editingRound ? "edit round" : "add a round"}
       </p>
       <input
         autoFocus
@@ -107,6 +129,16 @@ export function AddRoundModal({
       </div>
 
       <div className="flex gap-3">
+        {editingRound && (
+          <Button
+            variant="ghost"
+            className="flex-1 text-orange-dark"
+            disabled={submitting}
+            onClick={remove}
+          >
+            delete
+          </Button>
+        )}
         <Button variant="ghost" className="flex-1" onClick={onClose}>
           cancel
         </Button>
@@ -115,7 +147,7 @@ export function AddRoundModal({
           disabled={!valid || submitting}
           onClick={submit}
         >
-          add
+          {editingRound ? "save" : "add"}
         </Button>
       </div>
     </Modal>

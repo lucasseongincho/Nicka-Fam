@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
 import { AddRoundModal } from "@/components/bills/AddRoundModal";
+import { EditBillModal } from "@/components/bills/EditBillModal";
 
 export default function BillDetailPage({
   params,
@@ -21,6 +22,8 @@ export default function BillDetailPage({
   const [bill, setBill] = useState<Bill | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [showAddRound, setShowAddRound] = useState(false);
+  const [editingRound, setEditingRound] = useState<Round | null>(null);
+  const [editingBill, setEditingBill] = useState(false);
 
   useEffect(() => listenBill(billId, setBill), [billId]);
   useEffect(() => listenRounds(billId, setRounds), [billId]);
@@ -55,9 +58,17 @@ export default function BillDetailPage({
       >
         ‹ back to bills
       </button>
-      <h2 className="mb-2.5 font-heading text-xl font-semibold text-ink">
-        {bill.title}
-      </h2>
+      <div className="mb-2.5 flex items-center justify-between">
+        <h2 className="font-heading text-xl font-semibold text-ink">
+          {bill.title}
+        </h2>
+        <button
+          onClick={() => setEditingBill(true)}
+          className="cursor-pointer text-xs font-medium text-ink/40 hover:text-orange"
+        >
+          edit
+        </button>
+      </div>
 
       <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink/55">
         who&apos;s in
@@ -79,9 +90,17 @@ export default function BillDetailPage({
       </p>
       {rounds.map((round) => (
         <Card key={round.id} className="mb-2.5 p-3">
-          <div className="flex justify-between font-heading text-base font-semibold text-ink">
+          <div className="flex items-start justify-between font-heading text-base font-semibold text-ink">
             <span>{round.label}</span>
-            <span>${round.amount}</span>
+            <div className="flex items-center gap-2">
+              <span>${round.amount}</span>
+              <button
+                onClick={() => setEditingRound(round)}
+                className="cursor-pointer font-body text-xs font-medium text-ink/40 hover:text-orange"
+              >
+                edit
+              </button>
+            </div>
           </div>
           <p className="my-1 text-[13px] text-ink/55">
             paid by {nameOf(round.payerId)}
@@ -133,6 +152,24 @@ export default function BillDetailPage({
           billMembers={billMembers}
           nextOrder={rounds.length}
           onClose={() => setShowAddRound(false)}
+        />
+      )}
+
+      {editingRound && (
+        <AddRoundModal
+          billId={billId}
+          billMembers={billMembers}
+          nextOrder={rounds.length}
+          editingRound={editingRound}
+          onClose={() => setEditingRound(null)}
+        />
+      )}
+
+      {editingBill && (
+        <EditBillModal
+          bill={bill}
+          onClose={() => setEditingBill(false)}
+          onDeleted={() => router.push("/split")}
         />
       )}
     </div>

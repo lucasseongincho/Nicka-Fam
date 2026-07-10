@@ -1,10 +1,13 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Photo } from "@/lib/types";
@@ -49,4 +52,17 @@ export async function uploadPhoto(
     uploadedBy,
     createdAt: serverTimestamp(),
   });
+}
+
+export async function updatePhotoCaption(photoId: string, caption: string) {
+  await updateDoc(doc(db, "photos", photoId), { caption });
+}
+
+/**
+ * Deletes only the Firestore metadata doc. The underlying Cloudinary asset
+ * is left in place — deleting it requires the API Secret, which is
+ * intentionally kept out of this client-side app.
+ */
+export async function deletePhoto(photoId: string) {
+  await deleteDoc(doc(db, "photos", photoId));
 }

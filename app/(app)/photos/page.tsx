@@ -9,12 +9,14 @@ import { SegmentedToggle } from "@/components/ui/SegmentedToggle";
 import { Mascot } from "@/components/ui/Mascot";
 import { Button } from "@/components/ui/Button";
 import { UploadPhotoModal } from "@/components/photos/UploadPhotoModal";
+import { EditPhotoModal } from "@/components/photos/EditPhotoModal";
 
 export default function PhotosPage() {
   const { people } = usePeople();
   const [view, setView] = useState<"feed" | "grid">("feed");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [showUpload, setShowUpload] = useState(false);
+  const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
 
   useEffect(() => listenPhotos(setPhotos), []);
 
@@ -77,19 +79,29 @@ export default function PhotosPage() {
                 className="block h-[220px] w-full object-cover"
               />
               <div className="px-3 py-2.5">
-                <div className="flex items-center gap-1.5 font-body text-[13px] text-ink">
-                  {person && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={person.photoUrl}
-                      alt={person.name}
-                      className="h-5 w-5 rounded-full object-cover"
-                    />
-                  )}
-                  <span className="font-medium">{person?.name ?? "someone"}</span>
-                  <span className="text-ink/40">
-                    · {formatRelativeTime(photo.createdAt?.toDate?.() ?? null)}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-body text-[13px] text-ink">
+                    {person && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={person.photoUrl}
+                        alt={person.name}
+                        className="h-5 w-5 rounded-full object-cover"
+                      />
+                    )}
+                    <span className="font-medium">
+                      {person?.name ?? "someone"}
+                    </span>
+                    <span className="text-ink/40">
+                      · {formatRelativeTime(photo.createdAt?.toDate?.() ?? null)}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setEditingPhoto(photo)}
+                    className="cursor-pointer text-xs font-medium text-ink/40 hover:text-orange"
+                  >
+                    edit
+                  </button>
                 </div>
                 {photo.caption && (
                   <p className="mt-1 text-sm text-ink/75">{photo.caption}</p>
@@ -102,18 +114,29 @@ export default function PhotosPage() {
       {view === "grid" && (
         <div className="grid grid-cols-3 gap-1.5 pb-14">
           {photos.map((photo) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <button
               key={photo.id}
-              src={photo.url}
-              alt={photo.caption || "shared photo"}
-              className="aspect-square w-full rounded-lg border-2 border-ink object-cover"
-            />
+              onClick={() => setEditingPhoto(photo)}
+              className="cursor-pointer"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photo.url}
+                alt={photo.caption || "shared photo"}
+                className="aspect-square w-full rounded-lg border-2 border-ink object-cover"
+              />
+            </button>
           ))}
         </div>
       )}
 
       {showUpload && <UploadPhotoModal onClose={() => setShowUpload(false)} />}
+      {editingPhoto && (
+        <EditPhotoModal
+          photo={editingPhoto}
+          onClose={() => setEditingPhoto(null)}
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import {
   arrayUnion,
   collection,
   doc,
+  getDocs,
   increment,
   onSnapshot,
   orderBy,
@@ -67,6 +68,18 @@ export async function setBillParticipants(
   await updateDoc(doc(db, "bills", billId), { participantIds });
 }
 
+export async function updateBillTitle(billId: string, title: string) {
+  await updateDoc(doc(db, "bills", billId), { title });
+}
+
+export async function deleteBill(billId: string) {
+  const roundsSnap = await getDocs(collection(db, "bills", billId, "rounds"));
+  const batch = writeBatch(db);
+  roundsSnap.docs.forEach((r) => batch.delete(r.ref));
+  batch.delete(doc(db, "bills", billId));
+  await batch.commit();
+}
+
 export async function addRound(
   billId: string,
   round: {
@@ -88,6 +101,42 @@ export async function addRound(
   batch.update(doc(db, "bills", billId), {
     totalAmount: increment(round.amount),
     roundCount: increment(1),
+  });
+  await batch.commit();
+}
+
+export async function updateRound(
+  billId: string,
+  roundId: string,
+  oldAmount: number,
+  updates: {
+    label: string;
+    amount: number;
+    payerId: string;
+    participantIds: string[];
+  },
+) {
+  const batch = writeBatch(db);
+  batch.update(doc(db, "bills", billId, "rounds", roundId), {
+    ...updates,
+    noDrinkIds: [],
+  });
+  batch.update(doc(db, "bills", billId), {
+    totalAmount: increment(updates.amount - oldAmount),
+  });
+  await batch.commit();
+}
+
+export async function deleteRound(
+  billId: string,
+  roundId: string,
+  amount: number,
+) {
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "bills", billId, "rounds", roundId));
+  batch.update(doc(db, "bills", billId), {
+    totalAmount: increment(-amount),
+    roundCount: increment(-1),
   });
   await batch.commit();
 }
