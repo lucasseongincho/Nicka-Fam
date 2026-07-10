@@ -9,7 +9,6 @@ const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
@@ -21,6 +20,8 @@ const people = [
   { id: "jaehee", name: "Jaehee", photoUrl: "/avatars/jaehee.jpg" },
   { id: "heejeong", name: "Heejeong", photoUrl: "/avatars/heejeong.jpg" },
   { id: "lucas", name: "Lucas", photoUrl: "/avatars/lucas.jpg" },
+  { id: "james", name: "James", photoUrl: "/avatars/james.jpg" },
+  { id: "steven", name: "Steven", photoUrl: "/avatars/steven.jpg" },
 ];
 
 const app = initializeApp(firebaseConfig);
