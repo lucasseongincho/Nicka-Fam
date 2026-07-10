@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#EFE6D8}
+  * { box-sizing: border-box; }
+  a { color: #EA5A32; }
+  a:hover { color: #C8481F; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: #EFE6D8; display: flex; align-items: center; justify-content: center; padding: 48px 20px; font-family: 'Inter',sans-serif; position: absolute; left: 450px; top: 13px">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402,874">
+
+<div style="height:100%;display:flex;flex-direction:column;background:#FBF3E7;font-family:'Inter',sans-serif;position:relative;overflow:hidden">
+
+  <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ true }}">
+    <div onMouseMove="{{ onOnboardMove }}" style="position:absolute;inset:0;padding-top:54px;display:flex;flex-direction:column;overflow:hidden">
+
+      <div style="position:absolute;top:-30px;right:-70px;width:230px;height:230px;border-radius:45% 55% 60% 40%/50% 45% 55% 50%;background:#3F9DA6;opacity:0.28;transform:translate({{ px1 }}px,{{ py1 }}px)"></div>
+      <div style="position:absolute;bottom:170px;left:-60px;width:180px;height:180px;border-radius:60% 40% 45% 55%/45% 55% 40% 60%;background:#EA5A32;opacity:0.85;transform:translate({{ px2 }}px,{{ py2 }}px)"></div>
+      <div style="position:absolute;top:150px;left:34px;width:16px;height:16px;border-radius:50%;background:#241C16;opacity:0.8;transform:translate({{ px3 }}px,{{ py3 }}px)"></div>
+      <div style="position:absolute;bottom:260px;right:44px;width:22px;height:22px;border-radius:40%;background:#241C16;opacity:0.15;transform:translate({{ px2 }}px,{{ py3 }}px) rotate(20deg)"></div>
+
+      <div style="padding:16px 22px 0;font:700 15px 'Fredoka',sans-serif;color:#241C16;letter-spacing:0.5px;position:relative;z-index:2">nicka fam</div>
+
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;position:relative;z-index:2;padding:0 28px">
+        <div style="width:118px;height:118px;position:relative;background:#EA5A32;border:3px solid #241C16;border-radius:42% 58% 55% 45%/55% 45% 58% 42%;transform:translate({{ px1 }}px,{{ py2 }}px)">
+          <div style="position:absolute;top:44px;left:32px;width:9px;height:9px;border-radius:50%;background:#241C16"></div>
+          <div style="position:absolute;top:44px;right:32px;width:9px;height:9px;border-radius:50%;background:#241C16"></div>
+          <div style="position:absolute;top:60px;left:50%;transform:translateX(-50%);width:22px;height:11px;border-radius:0 0 20px 20px;border:2.5px solid #241C16;border-top:none"></div>
+          <div style="position:absolute;top:10px;right:-14px;width:26px;height:14px;border-radius:50%;background:#FBF3E7;border:2.5px solid #241C16;transform:rotate(-25deg)"></div>
+        </div>
+
+        <div style="text-align:center;font:700 42px/1.05 'Fredoka',sans-serif;color:#241C16">welcome to<br>nicka fam<br></div>
+        <div style="text-align:center;font:400 16px/1.5 'Inter',sans-serif;color:rgba(36,28,22,0.6);max-width:280px">the group that actually settles up. mostly bills, some chaos, occasional beach day.</div>
+      </div>
+
+      <div style="position:relative;z-index:2;padding:0 28px 46px">
+        <div onClick="{{ goWhoAmI }}" style="background:#EA5A32;color:#FFFDF8;text-align:center;padding:16px;border-radius:100px;border:2.5px solid #241C16;font:600 17px 'Fredoka',sans-serif;box-shadow:4px 4px 0 rgba(36,28,22,0.18);cursor:pointer">let's get in 👋</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isWhoAmI }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:70px 28px 40px">
+      <div style="font:700 30px 'Fredoka',sans-serif;color:#241C16;text-align:center">wait, who's this?</div>
+      <div style="font:400 15px 'Inter',sans-serif;color:rgba(36,28,22,0.55);text-align:center;margin-top:8px;margin-bottom:28px">tap yourself so the app knows who's clicking what</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1">
+        <sc-for list="{{ whoAmIMembers }}" as="m" hint-placeholder-count="6">
+          <div onClick="{{ m.select }}" style="{{ m.cardStyle }}">
+            <img src="{{ m.photo }}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2.5px solid #241C16">
+            <div style="font:600 16px 'Fredoka',sans-serif;color:#241C16;margin-top:8px">{{ m.name }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+    <div style="height:100%;display:flex;flex-direction:column">
+
+      <div style="padding:58px 20px 10px;display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div style="font:700 27px 'Fredoka',sans-serif;color:#241C16">{{ headerTitle }}</div>
+          <div style="font:400 13px 'Inter',sans-serif;color:rgba(36,28,22,0.5);margin-top:2px">{{ headerSub }}</div>
+        </div>
+        <div style="width:30px;height:30px;background:#EA5A32;border:2px solid #241C16;border-radius:42% 58% 55% 45%/55% 45% 58% 42%;position:relative;flex:none">
+          <div style="position:absolute;top:11px;left:8px;width:4px;height:4px;border-radius:50%;background:#241C16"></div>
+          <div style="position:absolute;top:11px;right:8px;width:4px;height:4px;border-radius:50%;background:#241C16"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;padding:2px 20px 12px;gap:0">
+        <sc-for list="{{ members }}" as="m" hint-placeholder-count="6">
+          <img src="{{ m.photo }}" alt="{{ m.name }}" style="{{ m.avatarStyle }}">
+        </sc-for>
+      </div>
+      <div style="padding:0 20px 6px;font:400 12px 'Inter',sans-serif;color:rgba(36,28,22,0.4)">you're in as <span style="font-weight:600;color:#EA5A32">{{ currentUserName }}</span></div>
+
+      <div style="flex:1;overflow:auto;padding:4px 20px 20px">
+
+        <!-- SPLIT TAB -->
+        <sc-if value="{{ isSplitTab }}" hint-placeholder-val="{{ true }}">
+
+          <sc-if value="{{ isListStage }}" hint-placeholder-val="{{ true }}">
+            <div onClick="{{ openBillDetail }}" style="background:#FFFDF8;border:2px solid #241C16;border-radius:16px;padding:16px;box-shadow:4px 4px 0 rgba(36,28,22,0.1);cursor:pointer;margin-bottom:12px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font:600 19px 'Fredoka',sans-serif;color:#241C16">Tuesday Tacos 🌮</div>
+                <div style="font:600 17px 'Fredoka',sans-serif;color:#241C16">${{ billTotal }}</div>
+              </div>
+              <div style="font:400 13px 'Inter',sans-serif;color:rgba(36,28,22,0.5);margin-top:4px">{{ participantCount }} people · 2 rounds · tap to open</div>
+            </div>
+            <div style="border:2px dashed rgba(36,28,22,0.35);border-radius:16px;padding:16px;text-align:center;color:rgba(36,28,22,0.5);font:400 15px 'Inter',sans-serif">+ start a new bill</div>
+          </sc-if>
+
+          <sc-if value="{{ isDetailStage }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ backToList }}" style="font:500 14px 'Inter',sans-serif;color:#EA5A32;margin-bottom:10px;cursor:pointer">‹ back to bills</div>
+            <div style="font:600 20px 'Fredoka',sans-serif;color:#241C16;margin-bottom:10px">Tuesday Tacos 🌮</div>
+
+            <div style="font:600 13px 'Inter',sans-serif;color:rgba(36,28,22,0.55);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">who's in</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
+              <sc-for list="{{ billMembers }}" as="m" hint-placeholder-count="6">
+                <div onClick="{{ m.toggle }}" style="{{ m.chipStyle }}">{{ m.name }}</div>
+              </sc-for>
+            </div>
+
+            <div style="font:600 13px 'Inter',sans-serif;color:rgba(36,28,22,0.55);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">rounds</div>
+            <sc-for list="{{ roundsView }}" as="r" hint-placeholder-count="2">
+              <div style="background:#FFFDF8;border:2px solid #241C16;border-radius:14px;padding:12px;margin-bottom:10px">
+                <div style="display:flex;justify-content:space-between;font:600 16px 'Fredoka',sans-serif;color:#241C16">
+                  <span>{{ r.label }}</span><span>${{ r.amount }}</span>
+                </div>
+                <div style="font:400 13px 'Inter',sans-serif;color:rgba(36,28,22,0.55);margin:4px 0 8px">paid by {{ r.payer }}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ r.chips }}" as="chip" hint-placeholder-count="4">
+                    <div onClick="{{ chip.toggle }}" style="{{ chip.style }}">{{ chip.label }}</div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <div style="border:2px dashed rgba(36,28,22,0.3);border-radius:12px;padding:10px;text-align:center;color:rgba(36,28,22,0.5);font:400 14px 'Inter',sans-serif;margin-bottom:16px">+ add another round</div>
+
+            <div style="position:sticky;bottom:0;background:#FBF3E7;border-top:2px solid #241C16;margin:0 -20px -20px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between">
+              <div style="font:600 18px 'Fredoka',sans-serif;color:#241C16">total ${{ billTotal }}</div>
+              <div onClick="{{ goSettle }}" style="background:#EA5A32;color:#FFFDF8;padding:12px 22px;border-radius:100px;border:2.5px solid #241C16;font:600 15px 'Fredoka',sans-serif;cursor:pointer">settle up ⚖️</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isSettleStage }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ backToDetail }}" style="font:500 14px 'Inter',sans-serif;color:#EA5A32;margin-bottom:10px;cursor:pointer">‹ back to bill</div>
+            <div style="font:600 22px 'Fredoka',sans-serif;color:#241C16">the damage 💸</div>
+            <div style="font:400 14px 'Inter',sans-serif;color:rgba(36,28,22,0.55);margin-bottom:16px">{{ transferCount }} payments closes it out</div>
+
+            <sc-for list="{{ transfersView }}" as="t" hint-placeholder-count="3">
+              <div style="background:#FFFDF8;border:2px solid #241C16;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;align-items:center;gap:8px;font:500 14px 'Inter',sans-serif;color:#241C16">
+                  <img src="{{ t.fromPhoto }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #241C16" alt="{{ t.fromName }}">
+                  <span>{{ t.fromName }}</span>
+                  <span style="color:#EA5A32">→</span>
+                  <img src="{{ t.toPhoto }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #241C16" alt="{{ t.toName }}">
+                  <span>{{ t.toName }}</span>
+                </div>
+                <div style="font:600 17px 'Fredoka',sans-serif;color:#241C16">${{ t.amt }}</div>
+              </div>
+            </sc-for>
+            <div style="text-align:center;margin-top:18px;color:rgba(36,28,22,0.5);font:400 15px 'Inter',sans-serif">📸 share as image</div>
+          </sc-if>
+        </sc-if>
+
+        <!-- CALENDAR TAB -->
+        <sc-if value="{{ isCalendarTab }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:6px;margin-bottom:16px;background:rgba(36,28,22,0.06);border-radius:100px;padding:4px">
+            <div onClick="{{ setMonthView }}" style="{{ monthPillStyle }}">month</div>
+            <div onClick="{{ setAgendaView }}" style="{{ agendaPillStyle }}">agenda</div>
+          </div>
+
+          <sc-if value="{{ isMonthView }}" hint-placeholder-val="{{ false }}">
+            <div style="font:600 18px 'Fredoka',sans-serif;color:#241C16;margin-bottom:10px">July 2026</div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px">
+              <div style="text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(36,28,22,0.4)">S</div>
+              <div style="text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(36,28,22,0.4)">M</div>
+              <div style="text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(36,28,22,0.4)">T</div>
+              <div style="text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(36,28,22,0.4)">W</div>
+              <div style="text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(36,28,22,0.4)">T</div>
+              <div style="text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(36,28,22,0.4)">F</div>
+              <div style="text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(36,28,22,0.4)">S</div>
+              <sc-for list="{{ cells }}" as="c" hint-placeholder-count="35">
+                <div onClick="{{ c.select }}" style="{{ c.style }}">
+                  {{ c.n }}
+                  <sc-if value="{{ c.dot }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:#EA5A32"></div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ hasSelDayEvent }}" hint-placeholder-val="{{ true }}">
+              <div style="background:#FFFDF8;border:2px solid #241C16;border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div style="font:600 16px 'Fredoka',sans-serif;color:#241C16">{{ selDayEvent.title }}</div>
+                  <div style="font:400 13px 'Inter',sans-serif;color:rgba(36,28,22,0.5)">{{ selDayEvent.time }}</div>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ hasNoSelDayEvent }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center;color:rgba(36,28,22,0.45);font:400 14px 'Inter',sans-serif;padding:14px">nothing planned this day yet</div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ isAgendaView }}" hint-placeholder-val="{{ true }}">
+            <sc-for list="{{ eventsView }}" as="ev" hint-placeholder-count="3">
+              <div style="background:#FFFDF8;border:2px solid #241C16;border-radius:14px;padding:12px 14px;margin-bottom:10px">
+                <div style="font:600 12px 'Inter',sans-serif;color:#EA5A32;letter-spacing:0.4px;margin-bottom:2px">{{ ev.date }}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <div style="font:600 17px 'Fredoka',sans-serif;color:#241C16">{{ ev.title }}</div>
+                  <div onClick="{{ ev.toggle }}" style="{{ ev.rsvpStyle }}" title="{{ ev.rsvpWho }}">{{ ev.rsvpLabel }}</div>
+                </div>
+                <div style="font:400 13px 'Inter',sans-serif;color:rgba(36,28,22,0.5);margin:3px 0 8px">{{ ev.time }}</div>
+                <div style="display:flex">
+                  <sc-for list="{{ ev.avatars }}" as="ap" hint-placeholder-count="3">
+                    <img src="{{ ap }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:2px solid #FBF3E7;box-shadow:0 0 0 1.5px rgba(36,28,22,0.25);margin-left:-7px" alt="attendee">
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <div style="border:2px dashed rgba(36,28,22,0.3);border-radius:12px;padding:10px;text-align:center;color:rgba(36,28,22,0.5);font:400 14px 'Inter',sans-serif">+ plan something</div>
+          </sc-if>
+        </sc-if>
+
+        <!-- PHOTOS TAB -->
+        <sc-if value="{{ isPhotosTab }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="display:flex;gap:6px;background:rgba(36,28,22,0.06);border-radius:100px;padding:4px">
+              <div onClick="{{ setFeedView }}" style="{{ feedPillStyle }}">feed</div>
+              <div onClick="{{ setGridView }}" style="{{ gridPillStyle }}">grid</div>
+            </div>
+            <div onClick="{{ togglePhotosEmpty }}" style="font:400 12px 'Inter',sans-serif;color:rgba(36,28,22,0.4);text-decoration:underline;cursor:pointer">{{ emptyToggleLabel }}</div>
+          </div>
+
+          <sc-if value="{{ photosEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 10px">
+              <div style="width:84px;height:84px;background:#3F9DA6;border:3px solid #241C16;border-radius:55% 45% 42% 58%/58% 42% 55% 45%;position:relative;margin-bottom:18px">
+                <div style="position:absolute;top:32px;left:24px;width:7px;height:7px;border-radius:50%;background:#241C16"></div>
+                <div style="position:absolute;top:32px;right:24px;width:7px;height:7px;border-radius:50%;background:#241C16"></div>
+                <div style="position:absolute;top:46px;left:50%;transform:translateX(-50%);width:16px;height:8px;border-radius:0 0 16px 16px;border:2px solid #241C16;border-top:none"></div>
+              </div>
+              <div style="font:600 20px 'Fredoka',sans-serif;color:#241C16;margin-bottom:6px">no photos yet</div>
+              <div style="font:400 14px/1.5 'Inter',sans-serif;color:rgba(36,28,22,0.55);max-width:230px;margin-bottom:18px">the pixels are lonely. someone panic-post something.</div>
+              <div style="background:#EA5A32;color:#FFFDF8;padding:12px 24px;border-radius:100px;border:2.5px solid #241C16;font:600 15px 'Fredoka',sans-serif">add the first one</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ photosPopulated }}" hint-placeholder-val="{{ true }}">
+            <sc-if value="{{ isFeedView }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ photos }}" as="p" hint-placeholder-count="6">
+                <div style="background:#FFFDF8;border:2px solid #241C16;border-radius:16px;overflow:hidden;margin-bottom:14px">
+                  <img src="{{ p.photo }}" style="width:100%;height:220px;object-fit:cover;display:block" alt="{{ p.name }}">
+                  <div style="padding:10px 12px">
+                    <div style="display:flex;align-items:center;gap:6px;font:500 13px 'Inter',sans-serif;color:#241C16">
+                      <img src="{{ p.photo }}" style="width:20px;height:20px;border-radius:50%;object-fit:cover" alt="{{ p.name }}">
+                      <span>{{ p.name }}</span><span style="color:rgba(36,28,22,0.4)">· {{ p.time }}</span>
+                    </div>
+                    <div style="font:400 14px 'Inter',sans-serif;color:rgba(36,28,22,0.75);margin-top:4px">{{ p.caption }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </sc-if>
+            <sc-if value="{{ isGridView }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding-bottom:60px">
+                <sc-for list="{{ photos }}" as="p" hint-placeholder-count="6">
+                  <img src="{{ p.photo }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:2px solid #241C16" alt="{{ p.name }}">
+                </sc-for>
+              </div>
+            </sc-if>
+          </sc-if>
+        </sc-if>
+
+        <!-- GAME TAB -->
+        <sc-if value="{{ isGameTab }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:60px 10px">
+            <div style="width:88px;height:88px;background:#FFFDF8;border:3px solid #241C16;border-radius:20px;position:relative;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;padding:14px;gap:6px;transform:rotate(-6deg);box-shadow:4px 4px 0 rgba(36,28,22,0.15);margin-bottom:18px">
+              <div style="width:12px;height:12px;border-radius:50%;background:#EA5A32;justify-self:start"></div>
+              <div style="width:12px;height:12px;border-radius:50%;background:#241C16;justify-self:end"></div>
+              <div style="width:12px;height:12px;border-radius:50%;background:#241C16;justify-self:start"></div>
+              <div style="width:12px;height:12px;border-radius:50%;background:#EA5A32;justify-self:end"></div>
+            </div>
+            <div style="font:600 20px 'Fredoka',sans-serif;color:#241C16;margin-bottom:6px">games, coming soon !!!<br></div>
+            
+          </div>
+        </sc-if>
+
+      </div>
+
+      <div style="display:flex;border-top:2px solid #241C16;background:#FBF3E7;padding-bottom:24px">
+        <div onClick="{{ setTabSplit }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 4px;cursor:pointer">
+          <div style="width:22px;height:22px;border-radius:50%;background:{{ splitIconBg }}"></div>
+          <div style="font:{{ splitLabelWeight }} 12px 'Inter',sans-serif;color:{{ splitLabelColor }}">split</div>
+        </div>
+        <div onClick="{{ setTabCalendar }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 4px;cursor:pointer">
+          <div style="width:22px;height:22px;border-radius:6px;border:2px solid {{ calendarIconColor }};position:relative">
+            <div style="position:absolute;top:-4px;left:4px;width:3px;height:6px;background:{{ calendarIconColor }};border-radius:2px"></div>
+            <div style="position:absolute;top:-4px;right:4px;width:3px;height:6px;background:{{ calendarIconColor }};border-radius:2px"></div>
+          </div>
+          <div style="font:{{ calendarLabelWeight }} 12px 'Inter',sans-serif;color:{{ calendarLabelColor }}">calendar</div>
+        </div>
+        <div onClick="{{ setTabPhotos }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 4px;cursor:pointer">
+          <div style="width:22px;height:22px;border-radius:6px;border:2px solid {{ photosIconColor }};position:relative;overflow:hidden">
+            <div style="position:absolute;top:3px;left:3px;width:6px;height:6px;border-radius:50%;background:{{ photosIconColor }}"></div>
+          </div>
+          <div style="font:{{ photosLabelWeight }} 12px 'Inter',sans-serif;color:{{ photosLabelColor }}">photos</div>
+        </div>
+        <div onClick="{{ setTabGame }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 4px;cursor:pointer">
+          <div style="width:22px;height:22px;border-radius:6px;border:2px solid {{ gameIconColor }};position:relative">
+            <div style="position:absolute;top:4px;left:4px;width:3px;height:3px;border-radius:50%;background:{{ gameIconColor }}"></div>
+            <div style="position:absolute;bottom:4px;right:4px;width:3px;height:3px;border-radius:50%;background:{{ gameIconColor }}"></div>
+          </div>
+          <div style="font:{{ gameLabelWeight }} 12px 'Inter',sans-serif;color:{{ gameLabelColor }}">game</div>
+        </div>
+      </div>
+
+    </div>
+  </sc-if>
+
+</div>
+</x-import>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    screen: 'onboarding',
+    currentUser: (typeof localStorage !== 'undefined' && localStorage.getItem('nickafam_user')) || null,
+    tab: 'split',
+    billStage: 'list',
+    includedMembers: ['Lucas', 'Ellie', 'Bon', 'Sunnie'],
+    noDrink: { '1_Sunnie': true },
+    calView: 'agenda',
+    selectedDay: 16,
+    rsvp: { 0: ['Lucas', 'Sunnie', 'Jaehee'], 1: ['Lucas', 'Ellie'], 2: [] },
+    photoView: 'feed',
+    photosEmpty: false,
+    mx: 0, my: 0,
+  };
+
+  members = [
+    { name: 'Ellie', photo: 'uploads/Ellie.jpg' },
+    { name: 'Bon', photo: 'uploads/Bon.jpg' },
+    { name: 'Sunnie', photo: 'uploads/Sunnie.jpg' },
+    { name: 'Jaehee', photo: 'uploads/Jaehee.jpg' },
+    { name: 'Heejeong', photo: 'uploads/Heejeong.jpg' },
+    { name: 'Lucas', photo: 'uploads/Lucas-4f4f4367.jpg' },
+  ];
+
+  rounds = [
+    { id: 1, label: 'Chips & drinks', amount: 48, payer: 'Lucas', participants: ['Lucas', 'Ellie', 'Bon', 'Sunnie'] },
+    { id: 2, label: 'Mains', amount: 92, payer: 'Ellie', participants: ['Lucas', 'Ellie', 'Bon', 'Sunnie'] },
+  ];
+
+  events = [
+    { date: 'THU JUL 16', title: 'Trivia night 🧠', time: '7pm', day: 16, attendees: ['Lucas', 'Sunnie', 'Jaehee'] },
+    { date: 'SAT JUL 18', title: 'Beach day 🏖️', time: '10am', day: 18, attendees: ['Lucas', 'Ellie'] },
+    { date: 'WED JUL 22', title: 'Bon voyage lunch 🍜', time: '12pm', day: 22, attendees: ['Ellie', 'Bon', 'Heejeong'] },
+  ];
+
+  photos = [
+    { name: 'Sunnie', photo: 'uploads/Sunnie.jpg', caption: 'proof the bill actually got split', time: '2h' },
+    { name: 'Bon', photo: 'uploads/Bon.jpg', caption: 'before the first coffee', time: '5h' },
+    { name: 'Ellie', photo: 'uploads/Ellie.jpg', caption: 'HR found this. do not ask.', time: '1d' },
+    { name: 'Heejeong', photo: 'uploads/Heejeong.jpg', caption: 'the halloween filter incident', time: '2d' },
+    { name: 'Jaehee', photo: 'uploads/Jaehee.jpg', caption: 'field trip fit check', time: '3d' },
+    { name: 'Lucas', photo: 'uploads/Lucas-4f4f4367.jpg', caption: 'certified vibes', time: '4d' },
+  ];
+
+  photoOf(name) {
+    const m = this.members.find(x => x.name === name);
+    return m ? m.photo : '';
+  }
+
+  goApp() { this.setState({ screen: 'app' }); }
+  goWhoAmI() { this.setState({ screen: 'whoami' }); }
+  chooseUser(name) {
+    if (typeof localStorage !== 'undefined') localStorage.setItem('nickafam_user', name);
+    this.setState({ currentUser: name, screen: 'app' });
+  }
+  onOnboardMove(e) {
+    const r = e.currentTarget.getBoundingClientRect();
+    const mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+    const my = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    this.setState({ mx, my });
+  }
+  setTab(name) { this.setState({ tab: name }); }
+  openBillDetail() { this.setState({ billStage: 'detail' }); }
+  backToList() { this.setState({ billStage: 'list' }); }
+  backToDetail() { this.setState({ billStage: 'detail' }); }
+  goSettle() { this.setState({ billStage: 'settle' }); }
+  toggleMemberByName(name) {
+    const cur = this.state.includedMembers;
+    const next = cur.includes(name) ? cur.filter(n => n !== name) : [...cur, name];
+    this.setState({ includedMembers: next });
+  }
+  toggleDrinkFor(roundId, name) {
+    const key = roundId + '_' + name;
+    const next = { ...this.state.noDrink };
+    next[key] = !next[key];
+    this.setState({ noDrink: next });
+  }
+  setCalView(v) { this.setState({ calView: v }); }
+  selectDayNum(d) { this.setState({ selectedDay: d }); }
+  toggleRSVPIdx(idx) {
+    const me = this.state.currentUser;
+    if (!me) return;
+    const next = { ...this.state.rsvp };
+    const list = next[idx] || [];
+    next[idx] = list.includes(me) ? list.filter(n => n !== me) : [...list, me];
+    this.setState({ rsvp: next });
+  }
+  setPhotoView(v) { this.setState({ photoView: v }); }
+  togglePhotosEmpty() { this.setState({ photosEmpty: !this.state.photosEmpty }); }
+
+  computeSettlement() {
+    const noDrink = this.state.noDrink;
+    const balances = {};
+    this.members.forEach(m => balances[m.name] = 0);
+    this.rounds.forEach(r => {
+      const n = r.participants.length;
+      const even = r.amount / n;
+      const nonDrinkers = r.participants.filter(p => noDrink[r.id + '_' + p]);
+      const drinkers = r.participants.filter(p => !noDrink[r.id + '_' + p]);
+      const nonShare = even * 0.6;
+      const savedTotal = nonDrinkers.length * even * 0.4;
+      const drinkerShare = drinkers.length ? (even * drinkers.length + savedTotal) / drinkers.length : even;
+      balances[r.payer] += r.amount;
+      r.participants.forEach(p => {
+        const share = noDrink[r.id + '_' + p] ? nonShare : drinkerShare;
+        balances[p] -= share;
+      });
+    });
+    const creditors = [];
+    const debtors = [];
+    Object.entries(balances).forEach(([name, amt]) => {
+      if (amt > 0.5) creditors.push({ name, amt });
+      else if (amt < -0.5) debtors.push({ name, amt: -amt });
+    });
+    creditors.sort((a, b) => b.amt - a.amt);
+    debtors.sort((a, b) => b.amt - a.amt);
+    const transfers = [];
+    let i = 0, j = 0;
+    while (i < creditors.length && j < debtors.length) {
+      const c = creditors[i], d = debtors[j];
+      const amt = Math.round(Math.min(c.amt, d.amt));
+      if (amt > 0) transfers.push({ from: d.name, to: c.name, amt });
+      c.amt -= amt; d.amt -= amt;
+      if (c.amt <= 0.5) i++;
+      if (d.amt <= 0.5) j++;
+    }
+    return transfers;
+  }
+
+  renderVals() {
+    const s = this.state;
+    const chipBase = 'padding:6px 12px;border-radius:100px;font:500 14px "Inter",sans-serif;cursor:pointer;border:2px solid #241C16;';
+    const chipOn = chipBase + 'background:#EA5A32;color:#FFFDF8;';
+    const chipOff = chipBase + 'background:#FFFDF8;color:rgba(36,28,22,0.4);text-decoration:line-through;border-color:rgba(36,28,22,0.3);';
+
+    const billMembers = this.members.map(m => {
+      const on = s.includedMembers.includes(m.name);
+      return { name: m.name, on, chipStyle: on ? chipOn : chipOff, toggle: () => this.toggleMemberByName(m.name) };
+    });
+
+    const roundChipStyle = (on) => on
+      ? 'padding:4px 10px;border-radius:100px;font:500 13px "Inter",sans-serif;cursor:pointer;border:2px solid #241C16;background:#F4EEE2;color:#241C16;'
+      : 'padding:4px 10px;border-radius:100px;font:500 13px "Inter",sans-serif;cursor:pointer;border:2px solid rgba(36,28,22,0.3);background:#FFFDF8;color:rgba(36,28,22,0.4);text-decoration:line-through;';
+
+    const roundsView = this.rounds.map(r => ({
+      id: r.id, label: r.label, amount: r.amount, payer: r.payer,
+      chips: r.participants.map(p => {
+        const off = !!s.noDrink[r.id + '_' + p];
+        return {
+          name: p, label: off ? p + ' 🚫' : p,
+          style: roundChipStyle(!off),
+          toggle: () => this.toggleDrinkFor(r.id, p),
+        };
+      }),
+    }));
+
+    const transfers = this.computeSettlement();
+    const transfersView = transfers.map(t => ({
+      fromName: t.from, fromPhoto: this.photoOf(t.from),
+      toName: t.to, toPhoto: this.photoOf(t.to), amt: t.amt,
+    }));
+
+    const firstDayOffset = 3;
+    const daysInMonth = 31;
+    const cellStyle = (blank, dot, sel) => {
+      let st = 'aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;font:400 13px "Inter",sans-serif;border-radius:8px;cursor:pointer;';
+      if (blank) return st + 'visibility:hidden;';
+      st += sel ? 'background:#EA5A32;color:#FFFDF8;border:2px solid #241C16;font-weight:600;' : 'background:#F4EEE2;color:#241C16;';
+      return st;
+    };
+    const cells = [];
+    for (let i = 0; i < firstDayOffset; i++) cells.push({ n: '', dot: false, style: cellStyle(true), select: () => {} });
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dot = [16, 18, 22].includes(d);
+      const sel = d === s.selectedDay;
+      cells.push({ n: d, dot, style: cellStyle(false, dot, sel), select: () => this.selectDayNum(d) });
+    }
+    while (cells.length % 7 !== 0) cells.push({ n: '', dot: false, style: cellStyle(true), select: () => {} });
+
+    const rsvpStyle = (on) => on
+      ? 'padding:5px 12px;border-radius:100px;font:600 13px "Inter",sans-serif;cursor:pointer;background:#EA5A32;color:#FFFDF8;border:2px solid #241C16;'
+      : 'padding:5px 12px;border-radius:100px;font:500 13px "Inter",sans-serif;cursor:pointer;background:#FFFDF8;color:rgba(36,28,22,0.5);border:2px solid rgba(36,28,22,0.3);';
+
+    const eventsView = this.events.map((e, idx) => {
+      const goingList = s.rsvp[idx] || [];
+      const attending = !!s.currentUser && goingList.includes(s.currentUser);
+      const combinedAvatars = Array.from(new Set([...e.attendees, ...goingList]));
+      return {
+        idx, date: e.date, title: e.title, time: e.time,
+        avatars: combinedAvatars.slice(0, 3).map(n => this.photoOf(n)),
+        rsvpLabel: attending ? 'in ✓' : 'rsvp?',
+        rsvpWho: goingList.length ? goingList.join(', ') + ' going' : 'no one yet',
+        rsvpStyle: rsvpStyle(attending),
+        toggle: () => this.toggleRSVPIdx(idx),
+      };
+    });
+    const selDayEvent = this.events.find(e => e.day === s.selectedDay) || null;
+
+    const pillOn = 'padding:8px 18px;border-radius:100px;font:600 13px "Inter",sans-serif;cursor:pointer;background:#241C16;color:#FBF3E7;';
+    const pillOff = 'padding:8px 18px;border-radius:100px;font:500 13px "Inter",sans-serif;cursor:pointer;color:rgba(36,28,22,0.5);';
+
+    const headerTitle = s.tab === 'split' ? 'split' : s.tab === 'calendar' ? 'plans' : s.tab === 'photos' ? 'the goods' : 'game';
+    const headerSub = s.tab === 'split' ? "who owes who, sorted" : s.tab === 'calendar' ? "stuff we're actually doing" : s.tab === 'photos' ? 'the shared shame folder' : 'patience, gamers';
+
+    const whoAmIMembers = this.members.map(m => ({
+      name: m.name, photo: m.photo,
+      select: () => this.chooseUser(m.name),
+      cardStyle: 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 8px;border-radius:16px;border:2.5px solid #241C16;cursor:pointer;background:' + (s.currentUser === m.name ? '#EA5A32' : '#FFFDF8'),
+    }));
+
+    const avatarStyle = (name) => 'width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid ' + (s.currentUser === name ? '#EA5A32' : '#FBF3E7') + ';box-shadow:0 0 0 1.5px rgba(36,28,22,0.25);margin-left:-8px';
+    const membersView = this.members.map(m => ({ name: m.name, photo: m.photo, avatarStyle: avatarStyle(m.name) }));
+
+    return {
+      isOnboarding: s.screen === 'onboarding',
+      isWhoAmI: s.screen === 'whoami',
+      isApp: s.screen === 'app',
+      goApp: () => this.goApp(),
+      goWhoAmI: () => this.goWhoAmI(),
+      whoAmIMembers,
+      currentUserName: s.currentUser || 'nobody (tap an avatar)',
+      onOnboardMove: (e) => this.onOnboardMove(e),
+      px1: (s.mx || 0) * 6, py1: (s.my || 0) * 6,
+      px2: (s.mx || 0) * 14, py2: (s.my || 0) * 14,
+      px3: (s.mx || 0) * 22, py3: (s.my || 0) * 22,
+
+      headerTitle, headerSub,
+      members: membersView,
+      setTabSplit: () => this.setTab('split'),
+      setTabCalendar: () => this.setTab('calendar'),
+      setTabPhotos: () => this.setTab('photos'),
+      setTabGame: () => this.setTab('game'),
+
+      isSplitTab: s.tab === 'split',
+      isCalendarTab: s.tab === 'calendar',
+      isPhotosTab: s.tab === 'photos',
+      isGameTab: s.tab === 'game',
+      splitIconBg: s.tab === 'split' ? '#EA5A32' : 'rgba(36,28,22,0.15)',
+      splitLabelColor: s.tab === 'split' ? '#EA5A32' : 'rgba(36,28,22,0.45)',
+      splitLabelWeight: s.tab === 'split' ? 600 : 400,
+      calendarIconColor: s.tab === 'calendar' ? '#EA5A32' : 'rgba(36,28,22,0.3)',
+      calendarLabelColor: s.tab === 'calendar' ? '#EA5A32' : 'rgba(36,28,22,0.45)',
+      calendarLabelWeight: s.tab === 'calendar' ? 600 : 400,
+      photosIconColor: s.tab === 'photos' ? '#EA5A32' : 'rgba(36,28,22,0.3)',
+      photosLabelColor: s.tab === 'photos' ? '#EA5A32' : 'rgba(36,28,22,0.45)',
+      photosLabelWeight: s.tab === 'photos' ? 600 : 400,
+      gameIconColor: s.tab === 'game' ? '#EA5A32' : 'rgba(36,28,22,0.3)',
+      gameLabelColor: s.tab === 'game' ? '#EA5A32' : 'rgba(36,28,22,0.45)',
+      gameLabelWeight: s.tab === 'game' ? 600 : 400,
+
+      isListStage: s.billStage === 'list',
+      isDetailStage: s.billStage === 'detail',
+      isSettleStage: s.billStage === 'settle',
+      openBillDetail: () => this.openBillDetail(),
+      backToList: () => this.backToList(),
+      backToDetail: () => this.backToDetail(),
+      goSettle: () => this.goSettle(),
+      billMembers,
+      roundsView,
+      billTotal: this.rounds.reduce((a, r) => a + r.amount, 0),
+      participantCount: this.rounds[0].participants.length,
+      transfersView,
+      transferCount: transfersView.length,
+
+      monthPillStyle: s.calView === 'month' ? pillOn : pillOff,
+      agendaPillStyle: s.calView === 'agenda' ? pillOn : pillOff,
+      isMonthView: s.calView === 'month',
+      isAgendaView: s.calView === 'agenda',
+      setMonthView: () => this.setCalView('month'),
+      setAgendaView: () => this.setCalView('agenda'),
+      cells,
+      selDayEvent: selDayEvent || { title: '', time: '' },
+      hasSelDayEvent: !!selDayEvent,
+      hasNoSelDayEvent: !selDayEvent,
+      eventsView,
+
+      feedPillStyle: s.photoView === 'feed' ? pillOn : pillOff,
+      gridPillStyle: s.photoView === 'grid' ? pillOn : pillOff,
+      isFeedView: s.photoView === 'feed',
+      isGridView: s.photoView === 'grid',
+      setFeedView: () => this.setPhotoView('feed'),
+      setGridView: () => this.setPhotoView('grid'),
+      photosEmpty: s.photosEmpty,
+      photosPopulated: !s.photosEmpty,
+      emptyToggleLabel: s.photosEmpty ? 'see photos' : 'see empty state',
+      togglePhotosEmpty: () => this.togglePhotosEmpty(),
+      photos: this.photos,
+    };
+  }
+}
+</script>
+</body>
+</html>

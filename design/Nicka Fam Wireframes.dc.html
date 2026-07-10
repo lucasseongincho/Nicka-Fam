@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#f2ede3;font-family:'Patrick Hand',cursive}
+  .dv-turn{padding:40px 44px 32px;border-bottom:2px dashed #00000030;scroll-margin-top:16px}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+  .dv-tid{font:700 13px 'Kalam',cursive;padding:3px 9px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+  .dv-tname{font:700 22px 'Kalam',cursive;color:#1a1a1a}
+  .dv-sub{font:400 20px 'Kalam',cursive;color:#1a1a1a;margin:26px 0 14px;display:flex;align-items:center;gap:10px}
+  .dv-sub::after{content:"";flex:1;border-bottom:2px dashed #00000025}
+  .dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+  .dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+  .dv-oid{font:700 13px 'Kalam',cursive;padding:3px 9px;background:#e8542e;color:#fff;border-radius:5px;text-decoration:none}
+  .dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 17px 'Patrick Hand',cursive;color:#00000090}
+  .dv-card{max-width:100%;background:#fffdf8;border:2.5px solid #1a1a1a;border-radius:14px;box-shadow:5px 5px 0 #1a1a1a20;overflow:hidden}
+  .dv-opt:target .dv-oid{background:#1a1a1a}
+  .dv-next{margin:22px 0 0;font:20px/1.5 'Patrick Hand',cursive;color:#00000070}
+  .dv-next a{color:#e8542e}
+
+  /* --- shared wireframe primitives --- */
+  .phone{width:320px}
+  .screen{padding:14px}
+  .sk-h{font:700 24px 'Kalam',cursive;color:#1a1a1a;margin:0 0 2px}
+  .sk-sub{font:16px 'Patrick Hand',cursive;color:#00000060;margin:0 0 12px}
+  .sk-row{display:flex;gap:8px;align-items:center}
+  .sk-chip{border:2px solid #1a1a1a;border-radius:20px;padding:5px 12px;font:16px 'Patrick Hand',cursive;background:#fff}
+  .sk-chip.on{background:#e8542e;color:#fff;border-color:#e8542e}
+  .avatar{width:34px;height:34px;border-radius:50%;border:2px solid #1a1a1a;background:#ffe1a8;display:flex;align-items:center;justify-content:center;font:14px 'Kalam',cursive;flex:none}
+  .avatar.sm{width:26px;height:26px;font-size:11px;margin-left:-8px}
+  .dashed{border:2px dashed #1a1a1a60;border-radius:10px}
+  .fab{width:52px;height:52px;border-radius:50%;background:#e8542e;border:2.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:26px/1 'Kalam',cursive;color:#fff;box-shadow:3px 3px 0 #1a1a1a30}
+  .mascot{width:34px;height:34px;border-radius:40% 60% 55% 45%/50% 45% 55% 50%;background:#ffe1a8;border:2.5px solid #1a1a1a;position:relative}
+  .mascot::before,.mascot::after{content:"";position:absolute;width:4px;height:4px;background:#1a1a1a;border-radius:50%;top:13px}
+  .mascot::before{left:9px}.mascot::after{right:9px}
+  .tabbar{display:flex;border-top:2.5px solid #1a1a1a;background:#fffdf8}
+  .tabitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 10px;font:13px 'Patrick Hand',cursive}
+  .tabicon{width:26px;height:26px;border:2px solid #1a1a1a;border-radius:7px}
+  .tabitem.active .tabicon{background:#e8542e;border-color:#e8542e}
+  .tabitem.active{color:#e8542e;font-weight:700}
+  .statusbar{height:20px}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t2">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Riff on <a class="dv-oid" href="#1c">1c</a> — adds the "didn't drink" per-round toggle</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Round card with per-person share toggle</div>
+      <div class="dv-card phone">
+        <div class="statusbar"></div>
+        <div class="screen" style="height:520px;overflow:hidden">
+          <div class="sk-h">Tuesday Tacos 🌮</div>
+          <div class="sk-sub">① who's in</div>
+          <div class="sk-row" style="flex-wrap:wrap;gap:6px;margin-bottom:14px">
+            <span class="sk-chip on">Nick</span><span class="sk-chip on">Ana</span><span class="sk-chip on">Sam</span><span class="sk-chip on">Jo</span><span class="sk-chip">Dev</span><span class="sk-chip">+ add</span>
+          </div>
+          <div class="sk-sub">② rounds</div>
+          <div class="dashed" style="padding:10px;margin-bottom:8px">
+            <div class="sk-row" style="justify-content:space-between">
+              <span style="font:18px 'Kalam',cursive">Round 1 · Chips &amp; drinks</span><span style="font:18px 'Kalam',cursive">$48</span>
+            </div>
+            <div class="sk-row" style="margin-top:6px;color:#1a1a1a80">paid by <b>Nick</b></div>
+            <div class="sk-row" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+              <span class="sk-chip on" style="padding:4px 10px;font-size:14px">Nick</span>
+              <span class="sk-chip on" style="padding:4px 10px;font-size:14px">Ana</span>
+              <span class="sk-chip on" style="padding:4px 10px;font-size:14px">Sam</span>
+              <span class="sk-chip" style="padding:4px 10px;font-size:14px;text-decoration:line-through;color:#1a1a1a50">Jo 🚫🍺</span>
+            </div>
+            <div style="margin-top:4px;font-size:13px;color:#1a1a1a60">tap a name to mark "didn't drink" — cuts their share of this round</div>
+          </div>
+          <div class="dashed" style="padding:10px;margin-bottom:8px">
+            <div class="sk-row" style="justify-content:space-between">
+              <span style="font:18px 'Kalam',cursive">Round 2 · Mains</span><span style="font:18px 'Kalam',cursive">$92</span>
+            </div>
+            <div class="sk-row" style="margin-top:6px;color:#1a1a1a80">paid by <b>Ana</b> · split 4 ways, everyone ate</div>
+          </div>
+          <div class="sk-row" style="border:2px dashed #1a1a1a60;border-radius:10px;padding:10px;justify-content:center;color:#1a1a1a70">+ add another round</div>
+        </div>
+        <div style="border-top:2.5px solid #1a1a1a;padding:12px;display:flex;justify-content:space-between;align-items:center;background:#fffdf8">
+          <span style="font:18px 'Kalam',cursive">total $140</span>
+          <span class="fab" style="width:auto;height:auto;border-radius:24px;padding:9px 18px;font:16px 'Patrick Hand',cursive">settle up ⚖️</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "go high-fidelity" · "round to clean dollar amounts on settle-up like the reference"</p>
+</section>
+
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Nicka Fam — nav + one core screen per section</span></div>
+
+  <div class="dv-sub">Main navigation</div>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Bottom tab bar, mascot peeking top</div>
+      <div class="dv-card phone">
+        <div class="statusbar"></div>
+        <div class="screen" style="height:420px;position:relative;display:flex;flex-direction:column">
+          <div style="position:absolute;top:-6px;right:16px" class="mascot"></div>
+          <div class="sk-h">hey, fam 👋</div>
+          <div class="sk-sub">what are we doing today</div>
+          <div class="dashed" style="flex:1;margin-top:10px;display:flex;align-items:center;justify-content:center;color:#1a1a1a60;font-size:18px">(active section content)</div>
+        </div>
+        <div class="tabbar">
+          <div class="tabitem active"><div class="tabicon"></div>split</div>
+          <div class="tabitem"><div class="tabicon"></div>calendar</div>
+          <div class="tabitem"><div class="tabicon"></div>photos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Bottom tab + center quick-add FAB</div>
+      <div class="dv-card phone">
+        <div class="statusbar"></div>
+        <div class="screen" style="height:420px;display:flex;flex-direction:column">
+          <div class="sk-h">nicka fam 🐣</div>
+          <div class="sk-sub">6 humans, 1 group chat energy</div>
+          <div class="dashed" style="flex:1;margin-top:10px;display:flex;align-items:center;justify-content:center;color:#1a1a1a60;font-size:18px">(active section content)</div>
+        </div>
+        <div class="tabbar" style="position:relative;padding-top:6px">
+          <div class="tabitem active"><div class="tabicon"></div>split</div>
+          <div class="tabitem" style="visibility:hidden">.</div>
+          <div class="tabitem"><div class="tabicon"></div>photos</div>
+          <div style="position:absolute;left:50%;top:-24px;transform:translateX(-50%)" class="fab">+</div>
+        </div>
+        <div style="text-align:center;font:13px 'Patrick Hand',cursive;color:#1a1a1a60;margin-top:-6px;padding-bottom:4px">calendar lives under the + on mobile</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="dv-sub">Bill splitter — core screen (rounds-based, per your chasu reference)</div>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Single scroll — members, rounds, live total</div>
+      <div class="dv-card phone">
+        <div class="statusbar"></div>
+        <div class="screen" style="height:520px;overflow:hidden">
+          <div class="sk-h">Tuesday Tacos 🌮</div>
+          <div class="sk-sub">① who's in</div>
+          <div class="sk-row" style="flex-wrap:wrap;gap:6px;margin-bottom:14px">
+            <span class="sk-chip on">Nick</span><span class="sk-chip on">Ana</span><span class="sk-chip on">Sam</span><span class="sk-chip on">Jo</span><span class="sk-chip">Dev</span><span class="sk-chip">+ add</span>
+          </div>
+          <div class="sk-sub">② rounds</div>
+          <div class="dashed" style="padding:10px;margin-bottom:8px">
+            <div class="sk-row" style="justify-content:space-between">
+              <span style="font:18px 'Kalam',cursive">Round 1 · Chips &amp; drinks</span><span style="font:18px 'Kalam',cursive">$48</span>
+            </div>
+            <div class="sk-row" style="margin-top:6px;color:#1a1a1a80">paid by <b>Nick</b> · split 4 ways</div>
+          </div>
+          <div class="dashed" style="padding:10px;margin-bottom:8px">
+            <div class="sk-row" style="justify-content:space-between">
+              <span style="font:18px 'Kalam',cursive">Round 2 · Mains</span><span style="font:18px 'Kalam',cursive">$92</span>
+            </div>
+            <div class="sk-row" style="margin-top:6px;color:#1a1a1a80">paid by <b>Ana</b> · split 4 ways</div>
+          </div>
+          <div class="sk-row" style="border:2px dashed #1a1a1a60;border-radius:10px;padding:10px;justify-content:center;color:#1a1a1a70">+ add another round</div>
+        </div>
+        <div style="border-top:2.5px solid #1a1a1a;padding:12px;display:flex;justify-content:space-between;align-items:center;background:#fffdf8">
+          <span style="font:18px 'Kalam',cursive">total $140</span>
+          <span class="fab" style="width:auto;height:auto;border-radius:24px;padding:9px 18px;font:16px 'Patrick Hand',cursive">settle up ⚖️</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1d">
+      <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Settle-up result — simplified transfers</div>
+      <div class="dv-card phone">
+        <div class="statusbar"></div>
+        <div class="screen" style="height:520px">
+          <div class="sk-h">the damage 💸</div>
+          <div class="sk-sub">3 payments closes it out</div>
+          <div class="dashed" style="padding:12px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+            <div class="sk-row"><div class="avatar">S</div>→<div class="avatar">N</div></div>
+            <span style="font:20px 'Kalam',cursive">$23</span>
+          </div>
+          <div class="dashed" style="padding:12px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+            <div class="sk-row"><div class="avatar">J</div>→<div class="avatar">A</div></div>
+            <span style="font:20px 'Kalam',cursive">$11</span>
+          </div>
+          <div class="dashed" style="padding:12px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+            <div class="sk-row"><div class="avatar">D</div>→<div class="avatar">N</div></div>
+            <span style="font:20px 'Kalam',cursive">$14</span>
+          </div>
+          <div class="sk-row" style="gap:10px">
+            <span class="sk-chip" style="flex:1;text-align:center">re-split</span>
+            <span class="sk-chip on" style="flex:1;text-align:center">mark all paid</span>
+          </div>
+          <div style="text-align:center;margin-top:14px;color:#1a1a1a60;font-size:16px">📸 share as image</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="dv-sub">Shared calendar — core screen</div>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="1e">
+      <div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Month grid + RSVP avatar stacks</div>
+      <div class="dv-card phone">
+        <div class="statusbar"></div>
+        <div class="screen" style="height:480px;position:relative">
+          <div class="sk-h">July 2026</div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px">
+            <span style="text-align:center;font-size:13px;color:#1a1a1a50">S</span><span style="text-align:center;font-size:13px;color:#1a1a1a50">M</span><span style="text-align:center;font-size:13px;color:#1a1a1a50">T</span><span style="text-align:center;font-size:13px;color:#1a1a1a50">W</span><span style="text-align:center;font-size:13px;color:#1a1a1a50">T</span><span style="text-align:center;font-size:13px;color:#1a1a1a50">F</span><span style="text-align:center;font-size:13px;color:#1a1a1a50">S</span>
+            <sc-for list="{{ days }}" as="d" hint-placeholder-count="28">
+              <div class="dashed" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:14px;position:relative;{{ d.hl }}">
+                {{ d.n }}
+                <sc-if value="{{ d.dot }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;bottom:3px;width:5px;height:5px;background:#e8542e;border-radius:50%"></span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div class="dashed" style="margin-top:12px;padding:10px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font:18px 'Kalam',cursive">Beach day 🏖️</div>
+              <div style="color:#1a1a1a70;font-size:14px">Sat · 10am</div>
+            </div>
+            <div class="sk-row"><div class="avatar sm" style="margin-left:0">N</div><div class="avatar sm">A</div><div class="avatar sm">+3</div></div>
+          </div>
+          <div style="position:absolute;bottom:10px;right:10px" class="fab">+</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1f">
+      <div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Upcoming agenda list</div>
+      <div class="dv-card phone">
+        <div class="statusbar"></div>
+        <div class="screen" style="height:480px">
+          <div class="sk-h">what's coming up</div>
+          <div class="sk-sub">tap to RSVP, easy</div>
+          <div class="dashed" style="padding:10px;margin-bottom:8px">
+            <div style="color:#e8542e;font:14px 'Kalam',cursive">THU JUL 16</div>
+            <div class="sk-row" style="justify-content:space-between;margin-top:2px">
+              <span style="font:18px 'Kalam',cursive">Trivia night 🧠</span>
+              <span class="sk-chip on" style="padding:3px 10px;font-size:14px">in ✓</span>
+            </div>
+            <div class="sk-row" style="margin-top:6px"><div class="avatar sm" style="margin-left:0">N</div><div class="avatar sm">S</div><div class="avatar sm">J</div></div>
+          </div>
+          <div class="dashed" style="padding:10px;margin-bottom:8px">
+            <div style="color:#e8542e;font:14px 'Kalam',cursive">SAT JUL 18</div>
+            <div class="sk-row" style="justify-content:space-between;margin-top:2px">
+              <span style="font:18px 'Kalam',cursive">Beach day 🏖️</span>
+              <span class="sk-chip" style="padding:3px 10px;font-size:14px">rsvp?</span>
+            </div>
+            <div class="sk-row" style="margin-top:6px"><div class="avatar sm" style="margin-left:0">N</div><div class="avatar sm">A</div></div>
+          </div>
+          <div class="sk-row" style="border:2px dashed #1a1a1a60;border-radius:10px;padding:10px;justify-content:center;color:#1a1a1a70">+ plan something</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="dv-sub">Photo sharing — core screen (feed / grid toggle)</div>
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="1g">
+      <div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Feed view — chat-like</div>
+      <div class="dv-card phone">
+        <div class="statusbar"></div>
+        <div class="screen" style="height:500px">
+          <div class="sk-row" style="justify-content:space-between">
+            <div class="sk-h">the goods 📸</div>
+            <div class="sk-row" style="gap:4px"><span class="sk-chip on" style="padding:4px 10px;font-size:14px">feed</span><span class="sk-chip" style="padding:4px 10px;font-size:14px">grid</span></div>
+          </div>
+          <div class="dashed" style="margin-top:10px;margin-bottom:10px">
+            <div style="height:130px;background:repeating-linear-gradient(45deg,#1a1a1a10,#1a1a1a10 8px,#fffdf8 8px,#fffdf8 16px);display:flex;align-items:center;justify-content:center;color:#1a1a1a50;font-size:13px;font-family:monospace">group photo</div>
+            <div style="padding:8px 10px">
+              <div class="sk-row"><div class="avatar sm" style="margin-left:0">A</div><span>Ana · just now</span></div>
+              <div style="margin-top:2px">the tacos did not survive</div>
+            </div>
+          </div>
+          <div class="dashed">
+            <div style="height:130px;background:repeating-linear-gradient(45deg,#1a1a1a10,#1a1a1a10 8px,#fffdf8 8px,#fffdf8 16px);display:flex;align-items:center;justify-content:center;color:#1a1a1a50;font-size:13px;font-family:monospace">group photo</div>
+            <div style="padding:8px 10px">
+              <div class="sk-row"><div class="avatar sm" style="margin-left:0">S</div><span>Sam · 2h</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1h">
+      <div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Grid view — album wall</div>
+      <div class="dv-card phone">
+        <div class="statusbar"></div>
+        <div class="screen" style="height:500px">
+          <div class="sk-row" style="justify-content:space-between">
+            <div class="sk-h">the goods 📸</div>
+            <div class="sk-row" style="gap:4px"><span class="sk-chip" style="padding:4px 10px;font-size:14px">feed</span><span class="sk-chip on" style="padding:4px 10px;font-size:14px">grid</span></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px">
+            <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="9">
+              <div class="dashed" style="aspect-ratio:1;background:repeating-linear-gradient(45deg,#1a1a1a10,#1a1a1a10 6px,#fffdf8 6px,#fffdf8 12px)"></div>
+            </sc-for>
+          </div>
+          <div style="position:absolute;bottom:70px;right:24px" class="fab">+</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="dv-next">Try next: "go high-fidelity on <a class="dv-oid" href="#1c">1c</a> + <a class="dv-oid" href="#1d">1d</a>" · "combine <a class="dv-oid" href="#1a">1a</a> nav with <a class="dv-oid" href="#1f">1f</a> agenda" · "show more nav variations"</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const days = Array.from({length: 28}, (_, i) => ({
+      n: i + 1,
+      dot: i === 17 || i === 15,
+      hl: i === 17 ? 'border-color:#e8542e;border-style:solid' : ''
+    }));
+    const tiles = Array.from({length: 9}, () => ({}));
+    return { days, tiles };
+  }
+}
+</script>
+</body>
+</html>

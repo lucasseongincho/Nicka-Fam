@@ -1,0 +1,28 @@
+rules_version = '2';
+
+// No auth in this app — it's a closed, trusted friend group (see README).
+// These rules only scope access to the collections this app actually uses;
+// they do not restrict *who* can read/write within them.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /people/{personId} {
+      allow read, write: if true;
+    }
+
+    match /bills/{billId} {
+      allow read, write: if true;
+
+      match /rounds/{roundId} {
+        allow read, write: if true;
+      }
+    }
+
+    match /calendarEvents/{eventId} {
+      allow read, write: if true;
+    }
+
+    match /photos/{photoId} {
+      allow read, write: if true;
+    }
+  }
+}
