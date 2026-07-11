@@ -3,6 +3,7 @@ import {
   arrayUnion,
   collection,
   doc,
+  increment,
   onSnapshot,
   query,
   serverTimestamp,
@@ -97,4 +98,23 @@ export async function finishRoom(roomId: string) {
     status: "finished",
     "state.endedAt": serverTimestamp(),
   });
+}
+
+/** Atomically bumps a numeric field inside `state` (e.g. a per-player score map entry). */
+export async function incrementRoomStateField(
+  roomId: string,
+  fieldPath: string,
+  delta: number,
+) {
+  if (delta <= 0) return;
+  await updateDoc(doc(db, ROOMS_COLLECTION, roomId), {
+    [`state.${fieldPath}`]: increment(delta),
+  });
+}
+
+/** Ranks players by a per-player count, highest first (used for every game's results screen). */
+export function rankResults(players: string[], counts: Record<string, number>) {
+  return [...players]
+    .map((id) => ({ id, count: counts[id] ?? 0 }))
+    .sort((a, b) => b.count - a.count);
 }

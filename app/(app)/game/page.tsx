@@ -1,87 +1,39 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { usePeople } from "@/contexts/PersonContext";
-import { createRoom, joinRoom, listenRoomsByType } from "@/lib/gameRooms";
-import { lobbyTapTapState } from "@/lib/tapTap";
-import type { GameRoom, Person, TapTapState } from "@/lib/types";
+import { useJoinableGame } from "@/components/games/useJoinableGame";
 import { GameCard } from "@/components/games/GameCard";
+import { lobbyTapTapState } from "@/lib/tapTap";
+import { lobbyWhackItState } from "@/lib/whackIt";
+import type { TapTapState, WhackItState } from "@/lib/types";
 
 export default function GamePage() {
-  const router = useRouter();
-  const { people, activePersonId } = usePeople();
-  // null until the first live snapshot arrives, so we never show/act on a
-  // false "no open lobby" before we've actually heard from Firestore.
-  const [tapTapRooms, setTapTapRooms] = useState<GameRoom<TapTapState>[] | null>(
-    null,
+  const tapTap = useJoinableGame<TapTapState>(
+    "tap-tap",
+    lobbyTapTapState,
+    "mash it, don't miss",
   );
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => listenRoomsByType<TapTapState>("tap-tap", setTapTapRooms), []);
-
-  const roomsLoaded = tapTapRooms !== null;
-
-  const nameOf = (id: string) => people.find((p) => p.id === id)?.name;
-
-  const myTapTapRoom = useMemo(
-    () =>
-      activePersonId
-        ? tapTapRooms?.find((r) => r.players.includes(activePersonId))
-        : undefined,
-    [tapTapRooms, activePersonId],
+  const whackIt = useJoinableGame<WhackItState>(
+    "whack-a-mole",
+    lobbyWhackItState,
+    "quick hands only",
   );
-
-  const openTapTapLobby = useMemo(
-    () => tapTapRooms?.find((r) => r.status === "lobby"),
-    [tapTapRooms],
-  );
-
-  const joinableTapTapRoom = myTapTapRoom ?? openTapTapLobby;
-  const joinableTapTapPlayers = joinableTapTapRoom?.players
-    .map((id) => people.find((p) => p.id === id))
-    .filter((p): p is Person => !!p);
-
-  const tapTapSubtitle = !roomsLoaded
-    ? "loading..."
-    : loading
-      ? "hopping in..."
-      : myTapTapRoom
-        ? "you're in — back to it"
-        : openTapTapLobby
-          ? `${nameOf(openTapTapLobby.createdBy) ?? "someone"}'s lobby · join in`
-          : "mash it, don't miss";
-
-  const openTapTap = async () => {
-    if (!activePersonId || loading || !roomsLoaded) return;
-    setLoading(true);
-    try {
-      if (myTapTapRoom) {
-        router.push(`/game/room/${myTapTapRoom.id}`);
-        return;
-      }
-      if (openTapTapLobby) {
-        await joinRoom(openTapTapLobby.id, activePersonId);
-        router.push(`/game/room/${openTapTapLobby.id}`);
-        return;
-      }
-      const roomId = await createRoom("tap-tap", activePersonId, lobbyTapTapState());
-      router.push(`/game/room/${roomId}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="grid grid-cols-2 gap-3">
       <GameCard
         title="tap tap"
-        subtitle={tapTapSubtitle}
+        subtitle={tapTap.subtitle}
         emoji="👆"
-        onClick={openTapTap}
-        players={joinableTapTapPlayers}
+        onClick={tapTap.onClick}
+        players={tapTap.players}
       />
-      <GameCard title="whack-it" subtitle="reflex chaos" emoji="🔨" comingSoon />
+      <GameCard
+        title="whack-it"
+        subtitle={whackIt.subtitle}
+        emoji="🔨"
+        onClick={whackIt.onClick}
+        players={whackIt.players}
+      />
       <GameCard title="the mole" subtitle="find the fibber" emoji="🕵️" comingSoon />
       <GameCard title="mystery, pt. 2" subtitle="soon..." emoji="🃏" comingSoon />
     </div>

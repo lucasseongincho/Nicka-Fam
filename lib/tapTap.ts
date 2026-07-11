@@ -1,5 +1,5 @@
-import { doc, increment, serverTimestamp, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { serverTimestamp } from "firebase/firestore";
+import { incrementRoomStateField } from "@/lib/gameRooms";
 import type { TapTapState } from "@/lib/types";
 
 export const TAP_TAP_DURATION_SECONDS = 10;
@@ -32,14 +32,5 @@ export function activeTapTapState() {
 }
 
 export async function addTaps(roomId: string, personId: string, delta: number) {
-  if (delta <= 0) return;
-  await updateDoc(doc(db, "gameRooms", roomId), {
-    [`state.taps.${personId}`]: increment(delta),
-  });
-}
-
-export function tapTapResults(players: string[], taps: Record<string, number>) {
-  return [...players]
-    .map((id) => ({ id, count: taps[id] ?? 0 }))
-    .sort((a, b) => b.count - a.count);
+  await incrementRoomStateField(roomId, `taps.${personId}`, delta);
 }

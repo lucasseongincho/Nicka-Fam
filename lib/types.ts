@@ -86,3 +86,23 @@ export interface TapTapState {
   endedAt: Timestamp | null;
   taps: Record<string, number>;
 }
+
+/** One mole's appearance window, in ms offset from the round's start (after prepareSeconds). */
+export interface WhackItMole {
+  cell: number;
+  showAtMs: number;
+  hideAtMs: number;
+}
+
+export interface WhackItState {
+  durationSeconds: number;
+  /** "Get ready" seconds between startedAt and the schedule actually starting. */
+  prepareSeconds: number;
+  gridSize: number;
+  /** Server-resolved; null until the round-start write round-trips. */
+  startedAt: Timestamp | null;
+  endedAt: Timestamp | null;
+  /** Generated once by whoever starts the round, so every player faces the same sequence. */
+  schedule: WhackItMole[];
+  scores: Record<string, number>;
+}

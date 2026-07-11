@@ -1,18 +1,19 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { GameResults } from "@/components/games/GameResults";
 import { useBatchedCounter } from "@/components/games/useBatchedCounter";
 import { useRoundTimer } from "@/components/games/useRoundTimer";
 import { finishRoom, rankResults } from "@/lib/gameRooms";
-import { TAP_BATCH_MS, addTaps } from "@/lib/tapTap";
-import type { GameRoom, Person, TapTapState } from "@/lib/types";
+import { WHACK_IT_BATCH_MS, addHit } from "@/lib/whackIt";
+import type { GameRoom, Person, WhackItState } from "@/lib/types";
 
-export function TapTapRoom({
+export function WhackItRoom({
   room,
   people,
   activePersonId,
 }: {
-  room: GameRoom<TapTapState>;
+  room: GameRoom<WhackItState>;
   people: Person[];
   activePersonId: string;
 }) {
@@ -24,9 +25,9 @@ export function TapTapRoom({
   const counter = useBatchedCounter({
     active: room.status === "active",
     roundKey,
-    initialValue: room.state.taps[activePersonId] ?? 0,
-    batchMs: TAP_BATCH_MS,
-    onFlush: (delta) => void addTaps(room.id, activePersonId, delta),
+    initialValue: room.state.scores[activePersonId] ?? 0,
+    batchMs: WHACK_IT_BATCH_MS,
+    onFlush: (delta) => void addHit(room.id, activePersonId, delta),
   });
 
   const timer = useRoundTimer({
@@ -40,8 +41,26 @@ export function TapTapRoom({
     },
   });
 
-  const tap = () => {
+  // Guards against scoring the same mole appearance twice from a flurry of taps.
+  const scoredIndicesRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    scoredIndicesRef.current = new Set();
+  }, [roundKey]);
+
+  const elapsedInRoundMs = timer.roundStartMs !== null ? timer.now - timer.roundStartMs : -1;
+  const activeIndex =
+    !timer.isPreparing && elapsedInRoundMs >= 0
+      ? room.state.schedule.findIndex(
+          (m) => elapsedInRoundMs >= m.showAtMs && elapsedInRoundMs < m.hideAtMs,
+        )
+      : -1;
+  const activeCell = activeIndex >= 0 ? room.state.schedule[activeIndex].cell : null;
+
+  const tapCell = (cell: number) => {
     if (room.status !== "active" || timer.isPreparing || timer.remainingMs <= 0) return;
+    if (activeIndex < 0 || activeCell !== cell) return;
+    if (scoredIndicesRef.current.has(activeIndex)) return;
+    scoredIndicesRef.current.add(activeIndex);
     counter.increment();
   };
 
@@ -54,7 +73,7 @@ export function TapTapRoom({
         <p className="font-heading text-7xl font-bold text-orange">
           {timer.prepareRemainingSeconds}
         </p>
-        <p className="text-[13px] text-ink/50">fingers on standby...</p>
+        <p className="text-[13px] text-ink/50">eyes on the grid...</p>
       </div>
     );
   }
@@ -66,14 +85,22 @@ export function TapTapRoom({
         <p className="mb-1 font-heading text-4xl font-bold text-orange">
           {timer.remainingSeconds}
         </p>
-        <p className="mb-5 text-[13px] text-ink/50">tap tap tap!!</p>
+        <p className="mb-4 text-[13px] text-ink/50">whack it when it pops!</p>
 
-        <button
-          onClick={tap}
-          className="mb-6 flex h-40 w-40 select-none items-center justify-center rounded-full border-[3px] border-ink bg-orange font-heading text-2xl font-bold text-card shadow-button transition-transform active:scale-90"
-        >
-          {counter.count}
-        </button>
+        <div className="mb-3 grid grid-cols-3 gap-2.5">
+          {Array.from({ length: room.state.gridSize }, (_, cell) => (
+            <button
+              key={cell}
+              onClick={() => tapCell(cell)}
+              className={`flex h-20 w-20 select-none items-center justify-center rounded-2xl border-[3px] border-ink transition-colors ${
+                activeCell === cell ? "bg-orange" : "bg-card"
+              }`}
+            >
+              {activeCell === cell && <span className="text-2xl">🔨</span>}
+            </button>
+          ))}
+        </div>
+        <p className="mb-6 font-heading text-lg font-bold text-ink">{counter.count}</p>
 
         {others.length > 0 && (
           <div className="w-full">
@@ -87,7 +114,7 @@ export function TapTapRoom({
               >
                 <span className="text-sm text-ink/70">{nameOf(id)}</span>
                 <span className="font-heading text-sm font-semibold text-ink">
-                  {room.state.taps[id] ?? 0}
+                  {room.state.scores[id] ?? 0}
                 </span>
               </div>
             ))}
@@ -97,12 +124,12 @@ export function TapTapRoom({
     );
   }
 
-  const results = rankResults(room.players, room.state.taps);
+  const results = rankResults(room.players, room.state.scores);
   const winner = results[0];
   const loser = results[results.length - 1];
   const tagline =
     results.length > 1
-      ? `${nameOf(winner.id)} crushed it — ${nameOf(loser.id)} owes an explanation 👀`
+      ? `${nameOf(winner.id)} has the reflexes — ${nameOf(loser.id)} needs more coffee ☕`
       : "solo run, no shame here";
 
   return <GameResults results={results} nameOf={nameOf} tagline={tagline} />;

@@ -5,9 +5,17 @@ import { useRouter } from "next/navigation";
 import { usePeople } from "@/contexts/PersonContext";
 import { joinRoom, listenRoom, startRoom } from "@/lib/gameRooms";
 import { activeTapTapState } from "@/lib/tapTap";
-import type { GameRoom, TapTapState } from "@/lib/types";
+import { activeWhackItState } from "@/lib/whackIt";
+import type { GameRoom, TapTapState, WhackItState } from "@/lib/types";
 import { RoomLobby } from "@/components/games/RoomLobby";
 import { TapTapRoom } from "@/components/games/TapTapRoom";
+import { WhackItRoom } from "@/components/games/WhackItRoom";
+
+function startStateFor(gameType: string): unknown {
+  if (gameType === "tap-tap") return activeTapTapState();
+  if (gameType === "whack-a-mole") return activeWhackItState();
+  return {};
+}
 
 export default function GameRoomPage({
   params,
@@ -17,12 +25,15 @@ export default function GameRoomPage({
   const { roomId } = use(params);
   const router = useRouter();
   const { people, activePersonId } = usePeople();
-  const [room, setRoom] = useState<GameRoom<TapTapState> | null | undefined>(
-    undefined,
-  );
+  const [room, setRoom] = useState<
+    GameRoom<TapTapState | WhackItState> | null | undefined
+  >(undefined);
   const [starting, setStarting] = useState(false);
 
-  useEffect(() => listenRoom<TapTapState>(roomId, setRoom), [roomId]);
+  useEffect(
+    () => listenRoom<TapTapState | WhackItState>(roomId, setRoom),
+    [roomId],
+  );
 
   useEffect(() => {
     if (room && activePersonId && !room.players.includes(activePersonId)) {
@@ -54,7 +65,7 @@ export default function GameRoomPage({
     );
   }
 
-  if (room.gameType !== "tap-tap") {
+  if (room.gameType !== "tap-tap" && room.gameType !== "whack-a-mole") {
     return (
       <div>
         {backLink}
@@ -67,7 +78,7 @@ export default function GameRoomPage({
 
   const handleStart = async () => {
     setStarting(true);
-    await startRoom(room.id, activeTapTapState());
+    await startRoom(room.id, startStateFor(room.gameType));
   };
 
   return (
@@ -83,9 +94,20 @@ export default function GameRoomPage({
           starting={starting}
         />
       ) : (
-        activePersonId && (
-          <TapTapRoom room={room} people={people} activePersonId={activePersonId} />
-        )
+        activePersonId &&
+        (room.gameType === "tap-tap" ? (
+          <TapTapRoom
+            room={room as GameRoom<TapTapState>}
+            people={people}
+            activePersonId={activePersonId}
+          />
+        ) : (
+          <WhackItRoom
+            room={room as GameRoom<WhackItState>}
+            people={people}
+            activePersonId={activePersonId}
+          />
+        ))
       )}
     </div>
   );
