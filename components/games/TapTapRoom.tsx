@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { finishRoom, resetToLobby } from "@/lib/gameRooms";
-import { TAP_BATCH_MS, addTaps, lobbyTapTapState, tapTapResults } from "@/lib/tapTap";
+import { finishRoom } from "@/lib/gameRooms";
+import { TAP_BATCH_MS, addTaps, tapTapResults } from "@/lib/tapTap";
 import type { GameRoom, Person, TapTapState } from "@/lib/types";
 
 export function TapTapRoom({
@@ -65,7 +64,14 @@ export function TapTapRoom({
   }, [room.status, room.id, activePersonId]);
 
   const startedAtMs = room.state.startedAt ? room.state.startedAt.toMillis() : null;
-  const endsAtMs = startedAtMs ? startedAtMs + room.state.durationSeconds * 1000 : null;
+  const roundStartMs = startedAtMs
+    ? startedAtMs + room.state.prepareSeconds * 1000
+    : null;
+  const endsAtMs = roundStartMs ? roundStartMs + room.state.durationSeconds * 1000 : null;
+  const isPreparing = roundStartMs !== null && now < roundStartMs;
+  const prepareRemainingSeconds = roundStartMs
+    ? Math.max(1, Math.ceil((roundStartMs - now) / 1000))
+    : room.state.prepareSeconds;
   const remainingMs = endsAtMs
     ? Math.max(0, endsAtMs - now)
     : room.state.durationSeconds * 1000;
@@ -91,12 +97,24 @@ export function TapTapRoom({
   }, [room.status, now, endsAtMs, room.id, activePersonId]);
 
   const tap = () => {
-    if (room.status !== "active" || remainingMs <= 0) return;
+    if (room.status !== "active" || isPreparing || remainingMs <= 0) return;
     pendingRef.current += 1;
     setLocalCount((c) => c + 1);
   };
 
-  const playAgain = () => void resetToLobby(room.id, lobbyTapTapState());
+  if (room.status === "active" && isPreparing) {
+    return (
+      <div className="flex flex-col items-center gap-2 pt-16 text-center">
+        <p className="font-heading text-sm font-semibold uppercase tracking-wide text-ink/45">
+          get ready
+        </p>
+        <p className="font-heading text-7xl font-bold text-orange">
+          {prepareRemainingSeconds}
+        </p>
+        <p className="text-[13px] text-ink/50">fingers on standby...</p>
+      </div>
+    );
+  }
 
   if (room.status === "active") {
     const others = room.players.filter((id) => id !== activePersonId);
@@ -151,7 +169,7 @@ export function TapTapRoom({
           : "solo run, no shame here"}
       </p>
 
-      <div className="mb-6 w-full">
+      <div className="w-full">
         {results.map((r, i) => (
           <Card
             key={r.id}
@@ -175,8 +193,6 @@ export function TapTapRoom({
           </Card>
         ))}
       </div>
-
-      <Button onClick={playAgain}>play again</Button>
     </div>
   );
 }

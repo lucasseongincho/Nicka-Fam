@@ -11,23 +11,29 @@ import { GameCard } from "@/components/games/GameCard";
 export default function GamePage() {
   const router = useRouter();
   const { people, activePersonId } = usePeople();
-  const [tapTapRooms, setTapTapRooms] = useState<GameRoom<TapTapState>[]>([]);
+  // null until the first live snapshot arrives, so we never show/act on a
+  // false "no open lobby" before we've actually heard from Firestore.
+  const [tapTapRooms, setTapTapRooms] = useState<GameRoom<TapTapState>[] | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => listenRoomsByType<TapTapState>("tap-tap", setTapTapRooms), []);
+
+  const roomsLoaded = tapTapRooms !== null;
 
   const nameOf = (id: string) => people.find((p) => p.id === id)?.name;
 
   const myTapTapRoom = useMemo(
     () =>
       activePersonId
-        ? tapTapRooms.find((r) => r.players.includes(activePersonId))
+        ? tapTapRooms?.find((r) => r.players.includes(activePersonId))
         : undefined,
     [tapTapRooms, activePersonId],
   );
 
   const openTapTapLobby = useMemo(
-    () => tapTapRooms.find((r) => r.status === "lobby"),
+    () => tapTapRooms?.find((r) => r.status === "lobby"),
     [tapTapRooms],
   );
 
@@ -36,16 +42,18 @@ export default function GamePage() {
     .map((id) => people.find((p) => p.id === id))
     .filter((p): p is Person => !!p);
 
-  const tapTapSubtitle = loading
-    ? "hopping in..."
-    : myTapTapRoom
-      ? "you're in — back to it"
-      : openTapTapLobby
-        ? `${nameOf(openTapTapLobby.createdBy) ?? "someone"}'s lobby · join in`
-        : "mash it, don't miss";
+  const tapTapSubtitle = !roomsLoaded
+    ? "loading..."
+    : loading
+      ? "hopping in..."
+      : myTapTapRoom
+        ? "you're in — back to it"
+        : openTapTapLobby
+          ? `${nameOf(openTapTapLobby.createdBy) ?? "someone"}'s lobby · join in`
+          : "mash it, don't miss";
 
   const openTapTap = async () => {
-    if (!activePersonId || loading) return;
+    if (!activePersonId || loading || !roomsLoaded) return;
     setLoading(true);
     try {
       if (myTapTapRoom) {

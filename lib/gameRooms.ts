@@ -95,11 +95,3 @@ export async function finishRoom(roomId: string) {
     "state.endedAt": serverTimestamp(),
   });
 }
-
-/** Resets a finished room back to a fresh lobby, keeping the same players. */
-export async function resetToLobby(roomId: string, freshState: unknown) {
-  await updateDoc(doc(db, ROOMS_COLLECTION, roomId), {
-    status: "lobby",
-    state: freshState,
-  });
-}

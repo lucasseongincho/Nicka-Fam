@@ -79,6 +79,8 @@ export interface GameRoom<TState = Record<string, unknown>> {
 
 export interface TapTapState {
   durationSeconds: number;
+  /** "Get ready" seconds between startedAt and taps actually counting. */
+  prepareSeconds: number;
   /** Server-resolved; null until the round-start write round-trips. */
   startedAt: Timestamp | null;
   endedAt: Timestamp | null;
