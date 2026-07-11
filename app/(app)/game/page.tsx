@@ -35,28 +35,28 @@ export default function GamePage() {
       <GameCard
         title="tap tap"
         subtitle={tapTap.subtitle}
-        emoji="👆"
+        iconSrc="/games/red-button.png"
         onClick={tapTap.onClick}
         players={tapTap.players}
       />
       <GameCard
         title="whack a mole"
         subtitle={whackIt.subtitle}
-        emoji="🔨"
+        iconSrc="/games/mole.png"
         onClick={whackIt.onClick}
         players={whackIt.players}
       />
       <GameCard
         title="liar game"
         subtitle={mole.subtitle}
-        emoji="🤥"
+        iconSrc="/games/liar.png"
         onClick={mole.onClick}
         players={mole.players}
       />
       <GameCard
         title="guess who?"
         subtitle={guessWho.subtitle}
-        emoji="🤔"
+        iconSrc="/games/guess-who.png"
         onClick={guessWho.onClick}
         players={guessWho.players}
       />

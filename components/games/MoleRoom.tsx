@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -50,7 +51,13 @@ export function MoleRoom({
         <Card className="w-full px-4 py-6">
           {isMole ? (
             <>
-              <p className="mb-1 text-3xl">🐀</p>
+              <Image
+                src="/games/liar.png"
+                alt=""
+                width={64}
+                height={64}
+                className="mx-auto mb-1 rounded-card-sm border-2 border-ink"
+              />
               <p className="font-heading text-lg font-semibold text-ink">you&apos;re the mole</p>
               <p className="mt-1.5 text-[13px] text-ink/55">
                 you don&apos;t know the secret topic. listen closely and bluff your way through.
@@ -85,7 +92,16 @@ export function MoleRoom({
 
         <Card className="w-full px-4 py-5">
           {isMole ? (
-            <p className="text-sm text-ink/70">🐀 you&apos;re still the mole — keep bluffing</p>
+            <div className="flex items-center justify-center gap-2">
+              <Image
+                src="/games/liar.png"
+                alt=""
+                width={24}
+                height={24}
+                className="rounded-full border-2 border-ink"
+              />
+              <p className="text-sm text-ink/70">you&apos;re still the mole — keep bluffing</p>
+            </div>
           ) : (
             <p className="text-sm text-ink/70">
               topic: <span className="font-semibold text-ink">{room.state.topic}</span>
@@ -140,7 +156,13 @@ export function MoleRoom({
   if (room.state.phase === "moleGuess") {
     return (
       <div className="flex flex-col items-center gap-4 pt-10 text-center">
-        <p className="text-3xl">🕵️</p>
+        <Image
+          src="/games/liar.png"
+          alt=""
+          width={64}
+          height={64}
+          className="rounded-card-sm border-2 border-ink"
+        />
         <p className="font-heading text-lg font-semibold text-ink">the mole was caught!</p>
         {isMole ? (
           <>
@@ -177,7 +199,7 @@ export function MoleRoom({
   const moleWon = !moleCaught || room.state.moleGuess === room.state.topic;
   const verdict = moleCaught
     ? moleWon
-      ? `caught red-handed, but they guessed right — ${nameOf(room.state.moleId)} wins as the mole 🐀`
+      ? `caught red-handed, but they guessed right — ${nameOf(room.state.moleId)} wins as the mole`
       : "caught and stumped — crew wins 🎉"
     : `${nameOf(room.state.moleId)} got away with it — mole wins 😈`;
 
@@ -196,9 +218,17 @@ export function MoleRoom({
               id === room.state.moleId ? "border-orange" : ""
             }`}
           >
-            <span className="font-heading text-base font-semibold text-ink">
+            <span className="flex items-center gap-1.5 font-heading text-base font-semibold text-ink">
               {nameOf(id)}
-              {id === room.state.moleId && " 🐀"}
+              {id === room.state.moleId && (
+                <Image
+                  src="/games/liar.png"
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="rounded-full border border-ink"
+                />
+              )}
             </span>
             <span className="text-sm text-ink/55">
               {counts[id]} {counts[id] === 1 ? "vote" : "votes"}

@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { GameResults } from "@/components/games/GameResults";
 import { useBatchedCounter } from "@/components/games/useBatchedCounter";
 import { useRoundTimer } from "@/components/games/useRoundTimer";
 import { finishRoom, rankResults } from "@/lib/gameRooms";
 import { WHACK_IT_BATCH_MS, addHit } from "@/lib/whackIt";
 import type { GameRoom, Person, WhackItState } from "@/lib/types";
+
+/** How long the "hit" mole image flashes before the cell goes empty again. */
+const HIT_FLASH_MS = 250;
 
 export function WhackItRoom({
   room,
@@ -47,6 +51,14 @@ export function WhackItRoom({
     scoredIndicesRef.current = new Set();
   }, [roundKey]);
 
+  const [justHitCell, setJustHitCell] = useState<number | null>(null);
+  const hitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (hitTimeoutRef.current) clearTimeout(hitTimeoutRef.current);
+    };
+  }, []);
+
   const elapsedInRoundMs = timer.roundStartMs !== null ? timer.now - timer.roundStartMs : -1;
   const activeIndex =
     !timer.isPreparing && elapsedInRoundMs >= 0
@@ -62,6 +74,10 @@ export function WhackItRoom({
     if (scoredIndicesRef.current.has(activeIndex)) return;
     scoredIndicesRef.current.add(activeIndex);
     counter.increment();
+
+    setJustHitCell(cell);
+    if (hitTimeoutRef.current) clearTimeout(hitTimeoutRef.current);
+    hitTimeoutRef.current = setTimeout(() => setJustHitCell(null), HIT_FLASH_MS);
   };
 
   if (room.status === "active" && timer.isPreparing) {
@@ -88,17 +104,25 @@ export function WhackItRoom({
         <p className="mb-4 text-[13px] text-ink/50">whack it when it pops!</p>
 
         <div className="mb-3 grid grid-cols-3 gap-2.5">
-          {Array.from({ length: room.state.gridSize }, (_, cell) => (
-            <button
-              key={cell}
-              onClick={() => tapCell(cell)}
-              className={`flex h-20 w-20 select-none items-center justify-center rounded-2xl border-[3px] border-ink transition-colors ${
-                activeCell === cell ? "bg-orange" : "bg-card"
-              }`}
-            >
-              {activeCell === cell && <span className="text-2xl">🔨</span>}
-            </button>
-          ))}
+          {Array.from({ length: room.state.gridSize }, (_, cell) => {
+            const isHit = justHitCell === cell;
+            const isUp = activeCell === cell;
+            return (
+              <button
+                key={cell}
+                onClick={() => tapCell(cell)}
+                className={`relative flex h-20 w-20 select-none items-center justify-center overflow-hidden rounded-2xl border-[3px] border-ink transition-colors ${
+                  isHit || isUp ? "bg-orange" : "bg-card"
+                }`}
+              >
+                {isHit ? (
+                  <Image src="/games/mole-dying.png" alt="" fill className="object-cover" />
+                ) : (
+                  isUp && <Image src="/games/mole.png" alt="" fill className="object-cover" />
+                )}
+              </button>
+            );
+          })}
         </div>
         <p className="mb-6 font-heading text-lg font-bold text-ink">{counter.count}</p>
 

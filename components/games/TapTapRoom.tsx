@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import { useState } from "react";
 import { GameResults } from "@/components/games/GameResults";
 import { useBatchedCounter } from "@/components/games/useBatchedCounter";
 import { useRoundTimer } from "@/components/games/useRoundTimer";
@@ -17,6 +19,7 @@ export function TapTapRoom({
   activePersonId: string;
 }) {
   const nameOf = (id: string) => people.find((p) => p.id === id)?.name ?? "someone";
+  const [pressed, setPressed] = useState(false);
 
   const startedAtMs = room.state.startedAt ? room.state.startedAt.toMillis() : null;
   const roundKey = startedAtMs !== null ? String(startedAtMs) : "unstarted";
@@ -70,9 +73,23 @@ export function TapTapRoom({
 
         <button
           onClick={tap}
-          className="mb-6 flex h-40 w-40 select-none items-center justify-center rounded-full border-[3px] border-ink bg-orange font-heading text-2xl font-bold text-card shadow-button transition-transform active:scale-90"
+          onPointerDown={() => setPressed(true)}
+          onPointerUp={() => setPressed(false)}
+          onPointerLeave={() => setPressed(false)}
+          onPointerCancel={() => setPressed(false)}
+          className="relative mb-6 h-40 w-40 select-none"
         >
-          {counter.count}
+          <Image
+            src={pressed ? "/games/red-button-pushed.png" : "/games/red-button.png"}
+            alt=""
+            width={160}
+            height={160}
+            className="pointer-events-none h-40 w-40 object-contain"
+            priority
+          />
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center font-heading text-2xl font-bold text-card">
+            {counter.count}
+          </span>
         </button>
 
         {others.length > 0 && (
