@@ -9,6 +9,7 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
+import { ensureClockSynced } from "@/lib/clockSync";
 import { db } from "@/lib/firebase";
 import type { GameRoom, GameType } from "@/lib/types";
 
@@ -18,6 +19,7 @@ export function listenRoom<TState>(
   roomId: string,
   callback: (room: GameRoom<TState> | null) => void,
 ) {
+  void ensureClockSynced();
   return onSnapshot(doc(db, ROOMS_COLLECTION, roomId), (snap) => {
     if (!snap.exists()) {
       callback(null);
@@ -42,6 +44,7 @@ export function listenRoomsByType<TState>(
   gameType: GameType,
   callback: (rooms: GameRoom<TState>[]) => void,
 ) {
+  void ensureClockSynced();
   const q = query(collection(db, ROOMS_COLLECTION), where("gameType", "==", gameType));
   return onSnapshot(q, (snap) => {
     callback(

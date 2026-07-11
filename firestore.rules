@@ -32,5 +32,11 @@ service cloud.firestore {
     match /gameRooms/{roomId} {
       allow read, write: if true;
     }
+
+    // Single shared doc devices use to measure their own clock offset from
+    // the server, so game round timers agree across devices.
+    match /clockSync/{docId} {
+      allow read, write: if true;
+    }
   }
 }

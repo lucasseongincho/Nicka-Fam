@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/Card";
+import { syncedNow } from "@/lib/clockSync";
 import { finishRoom } from "@/lib/gameRooms";
 import { TAP_BATCH_MS, addTaps, tapTapResults } from "@/lib/tapTap";
 import type { GameRoom, Person, TapTapState } from "@/lib/types";
@@ -17,7 +18,7 @@ export function TapTapRoom({
 }) {
   const nameOf = (id: string) => people.find((p) => p.id === id)?.name ?? "someone";
 
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => syncedNow());
   const [localCount, setLocalCount] = useState(0);
   const pendingRef = useRef(0);
   const seededRoundRef = useRef<string | null>(null);
@@ -43,7 +44,7 @@ export function TapTapRoom({
 
   useEffect(() => {
     if (room.status !== "active") return;
-    const id = setInterval(() => setNow(Date.now()), 100);
+    const id = setInterval(() => setNow(syncedNow()), 100);
     return () => clearInterval(id);
   }, [room.status]);
 
