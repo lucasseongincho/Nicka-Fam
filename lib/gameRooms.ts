@@ -3,8 +3,6 @@ import {
   arrayUnion,
   collection,
   doc,
-  getDocs,
-  limit,
   onSnapshot,
   query,
   serverTimestamp,
@@ -35,33 +33,29 @@ export function listenRoom<TState>(
   });
 }
 
-/** An open lobby for this game type that anyone can still join, if one exists. */
-export async function findOpenRoom(gameType: GameType): Promise<string | null> {
-  const q = query(
-    collection(db, ROOMS_COLLECTION),
-    where("gameType", "==", gameType),
-    where("status", "==", "lobby"),
-    limit(1),
-  );
-  const snap = await getDocs(q);
-  return snap.empty ? null : snap.docs[0].id;
-}
-
-/** A room of this gameType the person is already in (lobby or active), so re-tapping a game card resumes their game instead of spawning a duplicate. */
-export async function findMyActiveRoom(
+/**
+ * All non-finished rooms of this gameType, live. Lets a game's catalog card
+ * show whether there's an open lobby to join (and who's in it) or a room the
+ * viewer is already part of, before they even tap it.
+ */
+export function listenRoomsByType<TState>(
   gameType: GameType,
-  personId: string,
-): Promise<string | null> {
-  const q = query(
-    collection(db, ROOMS_COLLECTION),
-    where("players", "array-contains", personId),
-  );
-  const snap = await getDocs(q);
-  const match = snap.docs.find((d) => {
-    const data = d.data();
-    return data.gameType === gameType && data.status !== "finished";
+  callback: (rooms: GameRoom<TState>[]) => void,
+) {
+  const q = query(collection(db, ROOMS_COLLECTION), where("gameType", "==", gameType));
+  return onSnapshot(q, (snap) => {
+    callback(
+      snap.docs
+        .map(
+          (d) =>
+            ({
+              id: d.id,
+              ...d.data({ serverTimestamps: "estimate" }),
+            }) as GameRoom<TState>,
+        )
+        .filter((room) => room.status !== "finished"),
+    );
   });
-  return match?.id ?? null;
 }
 
 export async function createRoom(

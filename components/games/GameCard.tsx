@@ -1,4 +1,6 @@
+import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
+import type { Person } from "@/lib/types";
 
 type GameCardProps = {
   title: string;
@@ -6,6 +8,8 @@ type GameCardProps = {
   emoji: string;
   comingSoon?: boolean;
   onClick?: () => void;
+  /** Who's already in the joinable/active room for this game, if any. */
+  players?: Person[];
 };
 
 export function GameCard({
@@ -14,6 +18,7 @@ export function GameCard({
   emoji,
   comingSoon = false,
   onClick,
+  players,
 }: GameCardProps) {
   if (comingSoon) {
     return (
@@ -39,6 +44,13 @@ export function GameCard({
     >
       <span className="text-3xl">{emoji}</span>
       <p className="font-heading text-sm font-semibold text-ink">{title}</p>
+      {players && players.length > 0 && (
+        <div className="flex">
+          {players.slice(0, 4).map((p) => (
+            <Avatar key={p.id} src={p.photoUrl} name={p.name} size="sm" overlap />
+          ))}
+        </div>
+      )}
       <p className="text-[11px] text-ink/50">{subtitle}</p>
     </Card>
   );
