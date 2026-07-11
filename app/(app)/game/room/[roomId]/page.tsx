@@ -3,11 +3,19 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePeople } from "@/contexts/PersonContext";
+import { GUESS_WHO_MIN_PLAYERS, activeGuessWhoState } from "@/lib/guessWho";
 import { joinRoom, listenRoom, startRoom } from "@/lib/gameRooms";
 import { MOLE_MIN_PLAYERS, activeMoleGameState } from "@/lib/moleGame";
 import { activeTapTapState } from "@/lib/tapTap";
 import { activeWhackItState } from "@/lib/whackIt";
-import type { GameRoom, MoleGameState, TapTapState, WhackItState } from "@/lib/types";
+import type {
+  GameRoom,
+  GuessWhoState,
+  MoleGameState,
+  TapTapState,
+  WhackItState,
+} from "@/lib/types";
+import { GuessWhoRoom } from "@/components/games/GuessWhoRoom";
 import { MoleRoom } from "@/components/games/MoleRoom";
 import { RoomLobby } from "@/components/games/RoomLobby";
 import { TapTapRoom } from "@/components/games/TapTapRoom";
@@ -17,11 +25,14 @@ function startStateFor(gameType: string, players: string[]): unknown {
   if (gameType === "tap-tap") return activeTapTapState();
   if (gameType === "whack-a-mole") return activeWhackItState();
   if (gameType === "mole") return activeMoleGameState(players);
+  if (gameType === "guess-who") return activeGuessWhoState(players);
   return {};
 }
 
 function minPlayersFor(gameType: string): number {
-  return gameType === "mole" ? MOLE_MIN_PLAYERS : 1;
+  if (gameType === "mole") return MOLE_MIN_PLAYERS;
+  if (gameType === "guess-who") return GUESS_WHO_MIN_PLAYERS;
+  return 1;
 }
 
 export default function GameRoomPage({
@@ -33,12 +44,18 @@ export default function GameRoomPage({
   const router = useRouter();
   const { people, activePersonId } = usePeople();
   const [room, setRoom] = useState<
-    GameRoom<TapTapState | WhackItState | MoleGameState> | null | undefined
+    | GameRoom<TapTapState | WhackItState | MoleGameState | GuessWhoState>
+    | null
+    | undefined
   >(undefined);
   const [starting, setStarting] = useState(false);
 
   useEffect(
-    () => listenRoom<TapTapState | WhackItState | MoleGameState>(roomId, setRoom),
+    () =>
+      listenRoom<TapTapState | WhackItState | MoleGameState | GuessWhoState>(
+        roomId,
+        setRoom,
+      ),
     [roomId],
   );
 
@@ -75,7 +92,8 @@ export default function GameRoomPage({
   if (
     room.gameType !== "tap-tap" &&
     room.gameType !== "whack-a-mole" &&
-    room.gameType !== "mole"
+    room.gameType !== "mole" &&
+    room.gameType !== "guess-who"
   ) {
     return (
       <div>
@@ -119,9 +137,15 @@ export default function GameRoomPage({
             people={people}
             activePersonId={activePersonId}
           />
-        ) : (
+        ) : room.gameType === "mole" ? (
           <MoleRoom
             room={room as GameRoom<MoleGameState>}
+            people={people}
+            activePersonId={activePersonId}
+          />
+        ) : (
+          <GuessWhoRoom
+            room={room as GameRoom<GuessWhoState>}
             people={people}
             activePersonId={activePersonId}
           />

@@ -62,8 +62,8 @@ export interface Photo {
   createdAt: Timestamp;
 }
 
-/** Extend as new mini-games are added. "mole" is the first social deduction game; the second doesn't have a slug yet. */
-export type GameType = "tap-tap" | "whack-a-mole" | "mole";
+/** Extend as new mini-games are added. */
+export type GameType = "tap-tap" | "whack-a-mole" | "mole" | "guess-who";
 export type GameRoomStatus = "lobby" | "active" | "finished";
 
 /** Shared shape for every mini-game room; `state` shape depends on gameType. */
@@ -123,5 +123,25 @@ export interface MoleGameState {
   votes: Record<string, string>;
   /** The mole's guess at the topic, once submitted (only applicable if caught). */
   moleGuess: string | null;
+  endedAt: Timestamp | null;
+}
+
+/**
+ * The forehead-card guessing game (aka the Yang Se-chan game). No
+ * cross-player secrecy needed here, unlike Mole -- each device only ever
+ * shows its own player's keyword; "not seeing your own" is done physically
+ * (phone held backwards against the forehead), not by the app.
+ */
+export interface GuessWhoState {
+  /** personId -> their assigned identity, which THEY must not look at. */
+  keywords: Record<string, string>;
+  /** Server-resolved; anchors the "don't peek yet" countdown. */
+  startedAt: Timestamp | null;
+  /** Minimum seconds to get the phone up before the keyword is shown. */
+  prepareSeconds: number;
+  /** personIds in the order they confirmed (verbally) they'd guessed correctly. */
+  doneOrder: string[];
+  /** Whoever's left once everyone else is done; null until the round ends. */
+  loserId: string | null;
   endedAt: Timestamp | null;
 }

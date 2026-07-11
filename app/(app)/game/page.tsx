@@ -2,10 +2,11 @@
 
 import { useJoinableGame } from "@/components/games/useJoinableGame";
 import { GameCard } from "@/components/games/GameCard";
+import { lobbyGuessWhoState } from "@/lib/guessWho";
 import { lobbyMoleGameState } from "@/lib/moleGame";
 import { lobbyTapTapState } from "@/lib/tapTap";
 import { lobbyWhackItState } from "@/lib/whackIt";
-import type { MoleGameState, TapTapState, WhackItState } from "@/lib/types";
+import type { GuessWhoState, MoleGameState, TapTapState, WhackItState } from "@/lib/types";
 
 export default function GamePage() {
   const tapTap = useJoinableGame<TapTapState>(
@@ -22,6 +23,11 @@ export default function GamePage() {
     "mole",
     lobbyMoleGameState,
     "find the fibber",
+  );
+  const guessWho = useJoinableGame<GuessWhoState>(
+    "guess-who",
+    lobbyGuessWhoState,
+    "forehead cards, no peeking",
   );
 
   return (
@@ -47,7 +53,13 @@ export default function GamePage() {
         onClick={mole.onClick}
         players={mole.players}
       />
-      <GameCard title="mystery, pt. 2" subtitle="soon..." emoji="🃏" comingSoon />
+      <GameCard
+        title="guess who?"
+        subtitle={guessWho.subtitle}
+        emoji="🤔"
+        onClick={guessWho.onClick}
+        players={guessWho.players}
+      />
     </div>
   );
 }
