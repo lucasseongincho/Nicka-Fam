@@ -61,3 +61,26 @@ export interface Photo {
   uploadedBy: string;
   createdAt: Timestamp;
 }
+
+/** Extend as new mini-games are added; only "tap-tap" is playable so far. */
+export type GameType = "tap-tap" | "whack-a-mole" | "social-deduction";
+export type GameRoomStatus = "lobby" | "active" | "finished";
+
+/** Shared shape for every mini-game room; `state` shape depends on gameType. */
+export interface GameRoom<TState = Record<string, unknown>> {
+  id: string;
+  gameType: GameType;
+  status: GameRoomStatus;
+  players: string[];
+  createdBy: string;
+  createdAt: Timestamp;
+  state: TState;
+}
+
+export interface TapTapState {
+  durationSeconds: number;
+  /** Server-resolved; null until the round-start write round-trips. */
+  startedAt: Timestamp | null;
+  endedAt: Timestamp | null;
+  taps: Record<string, number>;
+}

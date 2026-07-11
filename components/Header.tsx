@@ -7,7 +7,7 @@ const META: Record<string, { title: string; sub: string }> = {
   "/split": { title: "split", sub: "who owes who, sorted" },
   "/calendar": { title: "plans", sub: "stuff we're actually doing" },
   "/photos": { title: "the goods", sub: "the shared shame folder" },
-  "/game": { title: "game", sub: "patience, gamers" },
+  "/game": { title: "game", sub: "pick your chaos" },
 };
 
 export function Header() {

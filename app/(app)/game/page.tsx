@@ -1,15 +1,50 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { usePeople } from "@/contexts/PersonContext";
+import { createRoom, findMyActiveRoom, findOpenRoom, joinRoom } from "@/lib/gameRooms";
+import { lobbyTapTapState } from "@/lib/tapTap";
+import { GameCard } from "@/components/games/GameCard";
+
 export default function GamePage() {
+  const router = useRouter();
+  const { activePersonId } = usePeople();
+  const [loading, setLoading] = useState(false);
+
+  const openTapTap = async () => {
+    if (!activePersonId || loading) return;
+    setLoading(true);
+    try {
+      const mine = await findMyActiveRoom("tap-tap", activePersonId);
+      if (mine) {
+        router.push(`/game/room/${mine}`);
+        return;
+      }
+      const open = await findOpenRoom("tap-tap");
+      if (open) {
+        await joinRoom(open, activePersonId);
+        router.push(`/game/room/${open}`);
+        return;
+      }
+      const roomId = await createRoom("tap-tap", activePersonId, lobbyTapTapState());
+      router.push(`/game/room/${roomId}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center px-2.5 pt-16 text-center">
-      <div className="mb-4.5 grid h-[88px] w-[88px] rotate-[-6deg] grid-cols-2 grid-rows-2 gap-1.5 rounded-2xl border-[3px] border-ink bg-card p-3.5 shadow-card">
-        <div className="h-3 w-3 justify-self-start rounded-full bg-orange" />
-        <div className="h-3 w-3 justify-self-end rounded-full bg-ink" />
-        <div className="h-3 w-3 justify-self-start rounded-full bg-ink" />
-        <div className="h-3 w-3 justify-self-end rounded-full bg-orange" />
-      </div>
-      <p className="font-heading text-xl font-semibold text-ink">
-        games, coming soon !!!
-      </p>
+    <div className="grid grid-cols-2 gap-3">
+      <GameCard
+        title="tap tap"
+        subtitle={loading ? "hopping in..." : "mash it, don't miss"}
+        emoji="👆"
+        onClick={openTapTap}
+      />
+      <GameCard title="whack-it" subtitle="reflex chaos" emoji="🔨" comingSoon />
+      <GameCard title="the mole" subtitle="find the fibber" emoji="🕵️" comingSoon />
+      <GameCard title="mystery, pt. 2" subtitle="soon..." emoji="🃏" comingSoon />
     </div>
   );
 }
