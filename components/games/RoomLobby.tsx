@@ -10,6 +10,7 @@ export function RoomLobby({
   people,
   onStart,
   starting,
+  minPlayers = 1,
 }: {
   players: string[];
   createdBy: string;
@@ -17,10 +18,12 @@ export function RoomLobby({
   people: Person[];
   onStart: () => void;
   starting: boolean;
+  minPlayers?: number;
 }) {
   const isHost = activePersonId === createdBy;
   const nameOf = (id: string) => people.find((p) => p.id === id);
   const host = nameOf(createdBy);
+  const needsMorePlayers = players.length < minPlayers;
 
   return (
     <div className="flex flex-col items-center pt-6 text-center">
@@ -45,7 +48,11 @@ export function RoomLobby({
         })}
       </Card>
 
-      {isHost ? (
+      {needsMorePlayers ? (
+        <p className="text-sm text-ink/45">
+          need at least {minPlayers} players to start &middot; {players.length} joined
+        </p>
+      ) : isHost ? (
         <Button onClick={onStart} disabled={starting}>
           {starting ? "starting..." : "start game"}
         </Button>

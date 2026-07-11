@@ -4,17 +4,24 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePeople } from "@/contexts/PersonContext";
 import { joinRoom, listenRoom, startRoom } from "@/lib/gameRooms";
+import { MOLE_MIN_PLAYERS, activeMoleGameState } from "@/lib/moleGame";
 import { activeTapTapState } from "@/lib/tapTap";
 import { activeWhackItState } from "@/lib/whackIt";
-import type { GameRoom, TapTapState, WhackItState } from "@/lib/types";
+import type { GameRoom, MoleGameState, TapTapState, WhackItState } from "@/lib/types";
+import { MoleRoom } from "@/components/games/MoleRoom";
 import { RoomLobby } from "@/components/games/RoomLobby";
 import { TapTapRoom } from "@/components/games/TapTapRoom";
 import { WhackItRoom } from "@/components/games/WhackItRoom";
 
-function startStateFor(gameType: string): unknown {
+function startStateFor(gameType: string, players: string[]): unknown {
   if (gameType === "tap-tap") return activeTapTapState();
   if (gameType === "whack-a-mole") return activeWhackItState();
+  if (gameType === "mole") return activeMoleGameState(players);
   return {};
+}
+
+function minPlayersFor(gameType: string): number {
+  return gameType === "mole" ? MOLE_MIN_PLAYERS : 1;
 }
 
 export default function GameRoomPage({
@@ -26,12 +33,12 @@ export default function GameRoomPage({
   const router = useRouter();
   const { people, activePersonId } = usePeople();
   const [room, setRoom] = useState<
-    GameRoom<TapTapState | WhackItState> | null | undefined
+    GameRoom<TapTapState | WhackItState | MoleGameState> | null | undefined
   >(undefined);
   const [starting, setStarting] = useState(false);
 
   useEffect(
-    () => listenRoom<TapTapState | WhackItState>(roomId, setRoom),
+    () => listenRoom<TapTapState | WhackItState | MoleGameState>(roomId, setRoom),
     [roomId],
   );
 
@@ -65,7 +72,11 @@ export default function GameRoomPage({
     );
   }
 
-  if (room.gameType !== "tap-tap" && room.gameType !== "whack-a-mole") {
+  if (
+    room.gameType !== "tap-tap" &&
+    room.gameType !== "whack-a-mole" &&
+    room.gameType !== "mole"
+  ) {
     return (
       <div>
         {backLink}
@@ -78,7 +89,7 @@ export default function GameRoomPage({
 
   const handleStart = async () => {
     setStarting(true);
-    await startRoom(room.id, startStateFor(room.gameType));
+    await startRoom(room.id, startStateFor(room.gameType, room.players));
   };
 
   return (
@@ -92,6 +103,7 @@ export default function GameRoomPage({
           people={people}
           onStart={handleStart}
           starting={starting}
+          minPlayers={minPlayersFor(room.gameType)}
         />
       ) : (
         activePersonId &&
@@ -101,9 +113,15 @@ export default function GameRoomPage({
             people={people}
             activePersonId={activePersonId}
           />
-        ) : (
+        ) : room.gameType === "whack-a-mole" ? (
           <WhackItRoom
             room={room as GameRoom<WhackItState>}
+            people={people}
+            activePersonId={activePersonId}
+          />
+        ) : (
+          <MoleRoom
+            room={room as GameRoom<MoleGameState>}
             people={people}
             activePersonId={activePersonId}
           />

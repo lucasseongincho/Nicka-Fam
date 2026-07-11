@@ -2,9 +2,10 @@
 
 import { useJoinableGame } from "@/components/games/useJoinableGame";
 import { GameCard } from "@/components/games/GameCard";
+import { lobbyMoleGameState } from "@/lib/moleGame";
 import { lobbyTapTapState } from "@/lib/tapTap";
 import { lobbyWhackItState } from "@/lib/whackIt";
-import type { TapTapState, WhackItState } from "@/lib/types";
+import type { MoleGameState, TapTapState, WhackItState } from "@/lib/types";
 
 export default function GamePage() {
   const tapTap = useJoinableGame<TapTapState>(
@@ -16,6 +17,11 @@ export default function GamePage() {
     "whack-a-mole",
     lobbyWhackItState,
     "quick hands only",
+  );
+  const mole = useJoinableGame<MoleGameState>(
+    "mole",
+    lobbyMoleGameState,
+    "find the fibber",
   );
 
   return (
@@ -34,7 +40,13 @@ export default function GamePage() {
         onClick={whackIt.onClick}
         players={whackIt.players}
       />
-      <GameCard title="the mole" subtitle="find the fibber" emoji="🕵️" comingSoon />
+      <GameCard
+        title="the mole"
+        subtitle={mole.subtitle}
+        emoji="🕵️"
+        onClick={mole.onClick}
+        players={mole.players}
+      />
       <GameCard title="mystery, pt. 2" subtitle="soon..." emoji="🃏" comingSoon />
     </div>
   );

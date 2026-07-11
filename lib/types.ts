@@ -62,8 +62,8 @@ export interface Photo {
   createdAt: Timestamp;
 }
 
-/** Extend as new mini-games are added; only "tap-tap" is playable so far. */
-export type GameType = "tap-tap" | "whack-a-mole" | "social-deduction";
+/** Extend as new mini-games are added. "mole" is the first social deduction game; the second doesn't have a slug yet. */
+export type GameType = "tap-tap" | "whack-a-mole" | "mole";
 export type GameRoomStatus = "lobby" | "active" | "finished";
 
 /** Shared shape for every mini-game room; `state` shape depends on gameType. */
@@ -105,4 +105,27 @@ export interface WhackItState {
   /** Generated once by whoever starts the round, so every player faces the same sequence. */
   schedule: WhackItMole[];
   scores: Record<string, number>;
+}
+
+export type MoleGamePhase = "reveal" | "discuss" | "vote" | "moleGuess" | "revealed";
+
+export interface MoleGameState {
+  phase: MoleGamePhase;
+  /** The secret word/topic everyone but the mole is shown. Empty in the lobby. */
+  topic: string;
+  /** personId secretly assigned as the mole. Empty in the lobby. */
+  moleId: string;
+  /** The correct topic plus decoys, shuffled once, for the mole's guess if caught. */
+  wordOptions: string[];
+  /** Suggested (not enforced) discussion length -- players discuss out loud, in person. */
+  discussSeconds: number;
+  /** Server-resolved; set when the round starts (reveal phase begins). */
+  startedAt: Timestamp | null;
+  /** Server-resolved; set when the host starts the discussion timer. */
+  discussStartedAt: Timestamp | null;
+  /** voterId -> suspectId */
+  votes: Record<string, string>;
+  /** The mole's guess at the topic, once submitted (only applicable if caught). */
+  moleGuess: string | null;
+  endedAt: Timestamp | null;
 }
