@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { usePeople } from "@/contexts/PersonContext";
-import { listenEvents, toggleRSVP } from "@/lib/calendar";
+import { listenEvents, planStatus, toggleRSVP } from "@/lib/calendar";
 import { buildMonthGrid, formatDateBadge, monthLabel } from "@/lib/dateUtils";
 import type { CalendarEvent } from "@/lib/types";
 import { SegmentedToggle } from "@/components/ui/SegmentedToggle";
@@ -11,6 +12,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { EventFormModal } from "@/components/calendar/EventFormModal";
 
 export default function CalendarPage() {
+  const router = useRouter();
   const { people, activePersonId } = usePeople();
   const [view, setView] = useState<"month" | "agenda">("agenda");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -29,15 +31,29 @@ export default function CalendarPage() {
     return (id: string) => map.get(id);
   }, [people]);
 
+  const confirmedEvents = useMemo(
+    () =>
+      events.filter(
+        (ev): ev is CalendarEvent & { date: string } =>
+          planStatus(ev) === "confirmed" && !!ev.date,
+      ),
+    [events],
+  );
+
+  const openPlans = useMemo(
+    () => events.filter((ev) => planStatus(ev) === "open"),
+    [events],
+  );
+
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
-    events.forEach((ev) => {
+    confirmedEvents.forEach((ev) => {
       const list = map.get(ev.date) ?? [];
       list.push(ev);
       map.set(ev.date, list);
     });
     return map;
-  }, [events]);
+  }, [confirmedEvents]);
 
   const cells = useMemo(
     () => buildMonthGrid(cursor.year, cursor.month),
@@ -50,10 +66,10 @@ export default function CalendarPage() {
 
   const agendaEvents = useMemo(
     () =>
-      [...events].sort((a, b) =>
-        (a.date + a.time).localeCompare(b.date + b.time),
+      [...confirmedEvents].sort((a, b) =>
+        (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")),
       ),
-    [events],
+    [confirmedEvents],
   );
 
   const openEdit = (ev: CalendarEvent) => {
@@ -73,6 +89,33 @@ export default function CalendarPage() {
           ]}
         />
       </div>
+
+      {openPlans.length > 0 && (
+        <div className="mb-4">
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink/55">
+            open plans
+          </p>
+          {openPlans.map((plan) => (
+            <Card
+              key={plan.id}
+              className="mb-2 flex cursor-pointer items-center justify-between px-3.5 py-3"
+              onClick={() => router.push(`/calendar/${plan.id}`)}
+            >
+              <div>
+                <p className="font-heading text-base font-semibold text-ink">
+                  {plan.title}
+                </p>
+                <p className="text-[13px] text-ink/50">
+                  tap to mark your availability
+                </p>
+              </div>
+              <span className="rounded-chip border-2 border-ink/30 bg-cream px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+                open
+              </span>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {view === "month" && (
         <div>

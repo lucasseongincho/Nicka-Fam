@@ -19,6 +19,10 @@ service cloud.firestore {
 
     match /calendarEvents/{eventId} {
       allow read, write: if true;
+
+      match /availabilities/{personId} {
+        allow read, write: if true;
+      }
     }
 
     match /photos/{photoId} {

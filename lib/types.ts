@@ -30,15 +30,26 @@ export interface Round {
   createdAt: Timestamp;
 }
 
+export type PlanStatus = "confirmed" | "open";
+
 export interface CalendarEvent {
   id: string;
   title: string;
-  /** ISO date, e.g. "2026-07-16" */
-  date: string;
-  time: string;
+  /** ISO date, e.g. "2026-07-16". Absent when status is "open". */
+  date?: string;
+  time?: string;
+  /** Absent on legacy docs written before this field existed; treat as "confirmed" if date is set. */
+  status?: PlanStatus;
   attendeeIds: string[];
   createdBy: string;
   createdAt: Timestamp;
+}
+
+/** One doc per person, keyed by personId, under calendarEvents/{eventId}/availabilities */
+export interface Availability {
+  personId: string;
+  /** ISO date strings this person marked as available for this plan */
+  dates: string[];
 }
 
 export interface Photo {
