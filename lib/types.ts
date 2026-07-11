@@ -117,12 +117,8 @@ export interface MoleGameState {
   moleId: string;
   /** The correct topic plus decoys, shuffled once, for the mole's guess if caught. */
   wordOptions: string[];
-  /** Suggested (not enforced) discussion length -- players discuss out loud, in person. */
-  discussSeconds: number;
   /** Server-resolved; set when the round starts (reveal phase begins). */
   startedAt: Timestamp | null;
-  /** Server-resolved; set when the host starts the discussion timer. */
-  discussStartedAt: Timestamp | null;
   /** voterId -> suspectId */
   votes: Record<string, string>;
   /** The mole's guess at the topic, once submitted (only applicable if caught). */

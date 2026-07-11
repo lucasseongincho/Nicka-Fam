@@ -3,10 +3,10 @@ import { db } from "@/lib/firebase";
 import { MOLE_TOPICS } from "@/lib/moleTopics";
 import type { MoleGameState } from "@/lib/types";
 
-/** Suggested (not enforced) discussion length. */
-export const MOLE_DISCUSS_SECONDS = 180;
 /** A mole game needs at least one "crew" member besides the mole to make sense. */
 export const MOLE_MIN_PLAYERS = 3;
+/** Topic + this many decoys shown to the mole if caught -- 8 total options. */
+export const MOLE_GUESS_DECOY_COUNT = 7;
 
 const ROOMS_COLLECTION = "gameRooms";
 
@@ -25,9 +25,7 @@ export function lobbyMoleGameState(): MoleGameState {
     topic: "",
     moleId: "",
     wordOptions: [],
-    discussSeconds: MOLE_DISCUSS_SECONDS,
     startedAt: null,
-    discussStartedAt: null,
     votes: {},
     moleGuess: null,
     endedAt: null,
@@ -42,15 +40,16 @@ export function lobbyMoleGameState(): MoleGameState {
 export function activeMoleGameState(players: string[]) {
   const topic = MOLE_TOPICS[Math.floor(Math.random() * MOLE_TOPICS.length)];
   const moleId = players[Math.floor(Math.random() * players.length)];
-  const decoys = shuffled(MOLE_TOPICS.filter((t) => t !== topic)).slice(0, 3);
+  const decoys = shuffled(MOLE_TOPICS.filter((t) => t !== topic)).slice(
+    0,
+    MOLE_GUESS_DECOY_COUNT,
+  );
   return {
     phase: "reveal" as const,
     topic,
     moleId,
     wordOptions: shuffled([topic, ...decoys]),
-    discussSeconds: MOLE_DISCUSS_SECONDS,
     startedAt: serverTimestamp(),
-    discussStartedAt: null,
     votes: {},
     moleGuess: null,
     endedAt: null,
@@ -60,7 +59,6 @@ export function activeMoleGameState(players: string[]) {
 export async function startDiscussion(roomId: string) {
   await updateDoc(doc(db, ROOMS_COLLECTION, roomId), {
     "state.phase": "discuss",
-    "state.discussStartedAt": serverTimestamp(),
   });
 }
 

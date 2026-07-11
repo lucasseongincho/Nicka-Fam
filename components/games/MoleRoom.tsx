@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { useRoundTimer } from "@/components/games/useRoundTimer";
 import {
   castVote,
   resolveVotes,
@@ -14,12 +13,6 @@ import {
   tallyVotes,
 } from "@/lib/moleGame";
 import type { GameRoom, MoleGameState, Person } from "@/lib/types";
-
-function formatClock(totalSeconds: number) {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
 
 export function MoleRoom({
   room,
@@ -34,19 +27,6 @@ export function MoleRoom({
   const isHost = activePersonId === room.createdBy;
   const isMole = activePersonId === room.state.moleId;
   const hostName = nameOf(room.createdBy);
-
-  const discussStartedAtMs = room.state.discussStartedAt
-    ? room.state.discussStartedAt.toMillis()
-    : null;
-
-  const discussTimer = useRoundTimer({
-    active: room.state.phase === "discuss",
-    startedAtMs: discussStartedAtMs,
-    prepareSeconds: 0,
-    durationSeconds: room.state.discussSeconds,
-    // Advisory only -- the host decides when to move to voting, the timer never forces it.
-    onRoundEnd: () => {},
-  });
 
   // Once every player has voted, whoever notices first tallies and advances.
   const resolvedRef = useRef(false);
@@ -100,13 +80,8 @@ export function MoleRoom({
 
   if (room.state.phase === "discuss") {
     return (
-      <div className="flex flex-col items-center gap-4 pt-8 text-center">
-        <p className="font-heading text-4xl font-bold text-orange">
-          {formatClock(discussTimer.remainingSeconds)}
-        </p>
-        <p className="text-[13px] text-ink/50">
-          {discussTimer.isRoundOver ? "time's up, wrap it up!" : "discuss out loud, find the mole"}
-        </p>
+      <div className="flex flex-col items-center gap-4 pt-10 text-center">
+        <p className="font-heading text-lg font-semibold text-ink">discuss out loud, find the mole</p>
 
         <Card className="w-full px-4 py-5">
           {isMole ? (
