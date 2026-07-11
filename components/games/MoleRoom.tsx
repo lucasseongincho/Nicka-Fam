@@ -58,7 +58,7 @@ export function MoleRoom({
                 height={64}
                 className="mx-auto mb-1 rounded-card-sm border-2 border-ink"
               />
-              <p className="font-heading text-lg font-semibold text-ink">you&apos;re the mole</p>
+              <p className="font-heading text-lg font-semibold text-ink">Liar</p>
               <p className="mt-1.5 text-[13px] text-ink/55">
                 you don&apos;t know the secret topic. listen closely and bluff your way through.
               </p>
