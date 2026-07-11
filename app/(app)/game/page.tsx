@@ -40,16 +40,16 @@ export default function GamePage() {
         players={tapTap.players}
       />
       <GameCard
-        title="whack-it"
+        title="whack a mole"
         subtitle={whackIt.subtitle}
         emoji="🔨"
         onClick={whackIt.onClick}
         players={whackIt.players}
       />
       <GameCard
-        title="the mole"
+        title="liar game"
         subtitle={mole.subtitle}
-        emoji="🕵️"
+        emoji="🤥"
         onClick={mole.onClick}
         players={mole.players}
       />
