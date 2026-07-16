@@ -19,6 +19,10 @@ export default function SuikaPage() {
         ‹ back to games
       </button>
 
+      <p className="mb-4 text-center font-heading text-lg font-semibold text-ink">
+        Suika Game
+      </p>
+
       <div className="mb-4 flex justify-center">
         <SegmentedToggle
           options={[

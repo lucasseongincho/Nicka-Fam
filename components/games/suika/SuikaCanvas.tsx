@@ -132,15 +132,34 @@ export function SuikaCanvas({
       return (clientX - rect.left) * scaleX;
     }
 
+    // Press-drag-release: the piece only tracks the pointer while held, and
+    // drops on release. One event model for mouse and touch alike, per
+    // pointer events, so there's no separate touch-drag/mouse-hover paths.
+    let isHolding = false;
+
+    function handlePointerDown(e: PointerEvent) {
+      if (gameOver) return;
+      isHolding = true;
+      pointerX = xFromClientX(e.clientX);
+      canvas.setPointerCapture(e.pointerId);
+    }
     function handlePointerMove(e: PointerEvent) {
+      if (!isHolding) return;
       pointerX = xFromClientX(e.clientX);
     }
-    function handlePointerDown(e: PointerEvent) {
+    function handlePointerUp(e: PointerEvent) {
+      if (!isHolding) return;
+      isHolding = false;
       pointerX = xFromClientX(e.clientX);
       handleDrop();
     }
-    canvas.addEventListener("pointermove", handlePointerMove);
+    function handlePointerCancel() {
+      isHolding = false;
+    }
     canvas.addEventListener("pointerdown", handlePointerDown);
+    canvas.addEventListener("pointermove", handlePointerMove);
+    canvas.addEventListener("pointerup", handlePointerUp);
+    canvas.addEventListener("pointercancel", handlePointerCancel);
 
     const merging = new Set<number>();
     function handleCollisions(event: Matter.IEventCollision<Matter.Engine>) {
@@ -248,8 +267,10 @@ export function SuikaCanvas({
     return () => {
       cancelAnimationFrame(rafId);
       if (dropTimeoutId) clearTimeout(dropTimeoutId);
-      canvas.removeEventListener("pointermove", handlePointerMove);
       canvas.removeEventListener("pointerdown", handlePointerDown);
+      canvas.removeEventListener("pointermove", handlePointerMove);
+      canvas.removeEventListener("pointerup", handlePointerUp);
+      canvas.removeEventListener("pointercancel", handlePointerCancel);
       Matter.Events.off(engine, "collisionStart", handleCollisions);
       Matter.Runner.stop(runner);
       Matter.World.clear(world, false);

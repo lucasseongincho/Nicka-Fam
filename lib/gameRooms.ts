@@ -1,7 +1,9 @@
 import {
   addDoc,
+  arrayRemove,
   arrayUnion,
   collection,
+  deleteDoc,
   doc,
   increment,
   onSnapshot,
@@ -81,6 +83,30 @@ export async function createRoom(
 export async function joinRoom(roomId: string, personId: string) {
   await updateDoc(doc(db, ROOMS_COLLECTION, roomId), {
     players: arrayUnion(personId),
+  });
+}
+
+/**
+ * Removes a player from a room that's still in its pre-start lobby. Callers
+ * must only invoke this while `status === "lobby"` -- leaving mid-game isn't
+ * what this is for. Promotes the next remaining player to host if the
+ * leaver was hosting, or deletes the room outright if they were the last
+ * one in it.
+ */
+export async function leaveLobbyRoom(
+  roomId: string,
+  personId: string,
+  players: string[],
+  createdBy: string,
+) {
+  const remaining = players.filter((id) => id !== personId);
+  if (remaining.length === 0) {
+    await deleteDoc(doc(db, ROOMS_COLLECTION, roomId));
+    return;
+  }
+  await updateDoc(doc(db, ROOMS_COLLECTION, roomId), {
+    players: arrayRemove(personId),
+    createdBy: createdBy === personId ? remaining[0] : createdBy,
   });
 }
 

@@ -63,7 +63,7 @@ export default function GamePage() {
         players={guessWho.players}
       />
       <GameCard
-        title="수박게임"
+        title="Suika Game"
         subtitle="solo · merge to the melon"
         iconSrc="/suika-faces/11.png"
         onClick={() => router.push("/game/suika")}

@@ -105,7 +105,7 @@ export function SuikaGame() {
         onGameOver={handleGameOver}
       />
       <p className="text-center text-[11px] text-ink/40">
-        tap or click to drop &middot; don&apos;t overflow the line
+        press and drag, release to drop &middot; don&apos;t overflow the line
       </p>
     </div>
   );

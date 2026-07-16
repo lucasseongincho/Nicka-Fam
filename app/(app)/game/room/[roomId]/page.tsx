@@ -1,10 +1,10 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePeople } from "@/contexts/PersonContext";
 import { GUESS_WHO_MIN_PLAYERS, activeGuessWhoState } from "@/lib/guessWho";
-import { joinRoom, listenRoom, startRoom } from "@/lib/gameRooms";
+import { joinRoom, leaveLobbyRoom, listenRoom, startRoom } from "@/lib/gameRooms";
 import { MOLE_MIN_PLAYERS, activeMoleGameState } from "@/lib/moleGame";
 import { activeTapTapState } from "@/lib/tapTap";
 import { activeWhackItState } from "@/lib/whackIt";
@@ -49,6 +49,11 @@ export default function GameRoomPage({
     | undefined
   >(undefined);
   const [starting, setStarting] = useState(false);
+  // Set synchronously the moment the player chooses to leave, so the
+  // auto-join effect below doesn't see the leave's own optimistic local
+  // snapshot update (players minus this person) and immediately re-add them
+  // before the route change unmounts this page.
+  const isLeavingRef = useRef(false);
 
   useEffect(
     () =>
@@ -60,14 +65,23 @@ export default function GameRoomPage({
   );
 
   useEffect(() => {
+    if (isLeavingRef.current) return;
     if (room && activePersonId && !room.players.includes(activePersonId)) {
       void joinRoom(roomId, activePersonId);
     }
   }, [room, activePersonId, roomId]);
 
+  const handleBack = () => {
+    if (room && room.status === "lobby" && activePersonId) {
+      isLeavingRef.current = true;
+      void leaveLobbyRoom(room.id, activePersonId, room.players, room.createdBy);
+    }
+    router.push("/game");
+  };
+
   const backLink = (
     <button
-      onClick={() => router.push("/game")}
+      onClick={handleBack}
       className="mb-2.5 cursor-pointer font-body text-sm font-medium text-orange"
     >
       ‹ back to games
