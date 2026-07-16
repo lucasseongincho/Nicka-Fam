@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  type FirestoreError,
   getDocs,
   onSnapshot,
   orderBy,
@@ -13,11 +14,22 @@ import type { SuikaScoreRecord } from "@/lib/types";
 
 const SCORES_COLLECTION = "suikaScores";
 
-export function listenSuikaScores(callback: (scores: SuikaScoreRecord[]) => void) {
+export function listenSuikaScores(
+  callback: (scores: SuikaScoreRecord[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
   const q = query(collection(db, SCORES_COLLECTION), orderBy("bestScore", "desc"));
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => d.data() as SuikaScoreRecord));
-  });
+  return onSnapshot(
+    q,
+    (snap) => callback(snap.docs.map((d) => d.data() as SuikaScoreRecord)),
+    (error) => {
+      // Without this handler, onSnapshot silently drops errors (e.g. a
+      // rules/permission issue) and the caller's loading state never
+      // resolves -- it just hangs forever with no signal why.
+      console.error("suikaScores listener failed", error);
+      onError?.(error);
+    },
+  );
 }
 
 /**

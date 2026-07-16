@@ -10,8 +10,17 @@ import type { SuikaScoreRecord } from "@/lib/types";
 export function SuikaLeaderboard() {
   const { people, activePersonId } = usePeople();
   const [scores, setScores] = useState<SuikaScoreRecord[] | null>(null);
+  const [failed, setFailed] = useState(false);
 
-  useEffect(() => listenSuikaScores(setScores), []);
+  useEffect(() => listenSuikaScores(setScores, () => setFailed(true)), []);
+
+  if (failed) {
+    return (
+      <p className="pt-10 text-center text-ink/40">
+        couldn&apos;t load the leaderboard right now.
+      </p>
+    );
+  }
 
   if (scores === null) {
     return <p className="pt-10 text-center text-ink/40">loading leaderboard...</p>;

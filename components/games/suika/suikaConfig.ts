@@ -1,5 +1,10 @@
-/** Display diameter (px) for each of the 11 stages, smallest to largest. */
-export const SUIKA_DIAMETERS = [40, 50, 62, 76, 92, 110, 130, 152, 176, 202, 230];
+/**
+ * Display diameter (px) for each of the 11 stages, smallest to largest.
+ * Scaled to ~73% of the original curve (40..230) so the largest piece still
+ * leaves comfortable roll/settle room inside the field instead of nearly
+ * spanning its width -- same growth shape, just smaller throughout.
+ */
+export const SUIKA_DIAMETERS = [29, 37, 45, 55, 67, 80, 95, 111, 128, 147, 168];
 
 export const SUIKA_STAGE_COUNT = SUIKA_DIAMETERS.length;
 
