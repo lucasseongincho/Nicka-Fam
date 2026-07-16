@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useJoinableGame } from "@/components/games/useJoinableGame";
 import { GameCard } from "@/components/games/GameCard";
 import { lobbyGuessWhoState } from "@/lib/guessWho";
@@ -9,6 +10,7 @@ import { lobbyWhackItState } from "@/lib/whackIt";
 import type { GuessWhoState, MoleGameState, TapTapState, WhackItState } from "@/lib/types";
 
 export default function GamePage() {
+  const router = useRouter();
   const tapTap = useJoinableGame<TapTapState>(
     "tap-tap",
     lobbyTapTapState,
@@ -59,6 +61,12 @@ export default function GamePage() {
         iconSrc="/games/guess-who.png"
         onClick={guessWho.onClick}
         players={guessWho.players}
+      />
+      <GameCard
+        title="수박게임"
+        subtitle="solo · merge to the melon"
+        iconSrc="/suika-faces/11.png"
+        onClick={() => router.push("/game/suika")}
       />
     </div>
   );

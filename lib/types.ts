@@ -145,3 +145,14 @@ export interface GuessWhoState {
   loserId: string | null;
   endedAt: Timestamp | null;
 }
+
+/**
+ * Suika (watermelon merge game). Solo play, not a gameRoom -- one document
+ * per person in `suikaScores`, keyed by personId, holding only their
+ * best-ever run so the leaderboard is a simple sorted read.
+ */
+export interface SuikaScoreRecord {
+  personId: string;
+  bestScore: number;
+  updatedAt: Timestamp;
+}

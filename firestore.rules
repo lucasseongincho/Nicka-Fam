@@ -33,6 +33,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // One doc per person, keyed by personId -- their best-ever Suika run.
+    match /suikaScores/{personId} {
+      allow read, write: if true;
+    }
+
     // Single shared doc devices use to measure their own clock offset from
     // the server, so game round timers agree across devices.
     match /clockSync/{docId} {
