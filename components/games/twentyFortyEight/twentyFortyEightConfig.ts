@@ -30,100 +30,143 @@ export function randomSpawnTier(): number {
   return Math.random() < SPAWN_TIER_1_WEIGHT ? 1 : 2;
 }
 
-/** 0 = empty cell, else the tier (1..MAX_TIER) occupying it. Rows top-to-bottom, columns left-to-right. */
-export type Grid = number[][];
+export type Direction = "up" | "down" | "left" | "right";
 
-export function emptyGrid(): Grid {
-  return Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(0));
+/**
+ * A tile carries a stable `id` across moves so the board can animate it
+ * sliding from its old row/col to its new one (same React key == same DOM
+ * node == a CSS transform transition instead of an unmount/remount).
+ */
+export type Tile = {
+  id: number;
+  tier: number;
+  row: number;
+  col: number;
+};
+
+let nextTileId = 1;
+
+function createTile(tier: number, row: number, col: number): Tile {
+  return { id: nextTileId++, tier, row, col };
 }
 
-export function emptyCells(grid: Grid): [number, number][] {
+function buildGrid(tiles: Tile[]): (Tile | null)[][] {
+  const grid: (Tile | null)[][] = Array.from({ length: GRID_SIZE }, () =>
+    Array<Tile | null>(GRID_SIZE).fill(null),
+  );
+  for (const t of tiles) grid[t.row][t.col] = t;
+  return grid;
+}
+
+function emptyCellPositions(tiles: Tile[]): [number, number][] {
+  const occupied = new Set(tiles.map((t) => `${t.row},${t.col}`));
   const cells: [number, number][] = [];
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
-      if (grid[r][c] === 0) cells.push([r, c]);
+      if (!occupied.has(`${r},${c}`)) cells.push([r, c]);
     }
   }
   return cells;
 }
 
-export function spawnRandomTile(grid: Grid): Grid {
-  const cells = emptyCells(grid);
-  if (cells.length === 0) return grid;
+export function spawnTile(tiles: Tile[]): Tile | null {
+  const cells = emptyCellPositions(tiles);
+  if (cells.length === 0) return null;
   const [r, c] = cells[Math.floor(Math.random() * cells.length)];
-  const next = grid.map((row) => [...row]);
-  next[r][c] = randomSpawnTier();
-  return next;
+  return createTile(randomSpawnTier(), r, c);
 }
 
-export type Direction = "up" | "down" | "left" | "right";
+export function initialTiles(): Tile[] {
+  const tiles: Tile[] = [];
+  const first = spawnTile(tiles);
+  if (first) tiles.push(first);
+  const second = spawnTile(tiles);
+  if (second) tiles.push(second);
+  return tiles;
+}
 
-/** Slides+merges one row toward index 0 ("left"). Each tile merges at most once per move, matching standard 2048 behavior. */
-function slideRowLeft(row: number[]): { row: number[]; scoreGained: number; changed: boolean } {
-  const values = row.filter((v) => v !== 0);
-  const result: number[] = [];
+/** Cell coordinates for each line (row or column) in the order tiles collapse toward -- e.g. "left" walks each row from column 0 outward. */
+function lineCells(direction: Direction): [number, number][][] {
+  const lines: [number, number][][] = [];
+  if (direction === "left" || direction === "right") {
+    const cols = direction === "left" ? [0, 1, 2, 3] : [3, 2, 1, 0];
+    for (let r = 0; r < GRID_SIZE; r++) lines.push(cols.map((c) => [r, c]));
+  } else {
+    const rows = direction === "up" ? [0, 1, 2, 3] : [3, 2, 1, 0];
+    for (let c = 0; c < GRID_SIZE; c++) lines.push(rows.map((r) => [r, c]));
+  }
+  return lines;
+}
+
+export type MoveResult = {
+  /** Surviving tiles (including newly-merged ones), with row/col updated to their post-move position. */
+  tiles: Tile[];
+  /** Tiles consumed by a merge this move, with row/col set to the tile they merged into -- render these briefly so they visibly slide into place before vanishing. */
+  removed: Tile[];
+  /** ids of surviving tiles that just merged this move, for a small pulse effect. */
+  mergedIds: Set<number>;
+  scoreGained: number;
+  changed: boolean;
+};
+
+export function move(tiles: Tile[], direction: Direction): MoveResult {
+  const grid = buildGrid(tiles);
+  const survivors: Tile[] = [];
+  const removed: Tile[] = [];
+  const mergedIds = new Set<number>();
   let scoreGained = 0;
-  let i = 0;
-  while (i < values.length) {
-    const current = values[i];
-    const next = values[i + 1];
-    if (next !== undefined && next === current) {
-      const merged = Math.min(current + 1, MAX_TIER);
-      result.push(merged);
-      scoreGained += mergeScore(merged);
-      i += 2;
-    } else {
-      result.push(current);
-      i += 1;
+
+  for (const cells of lineCells(direction)) {
+    const lineTiles = cells
+      .map(([r, c]) => grid[r][c])
+      .filter((t): t is Tile => t !== null);
+
+    let slot = 0;
+    let i = 0;
+    while (i < lineTiles.length) {
+      const current = lineTiles[i];
+      const next = lineTiles[i + 1];
+      const [targetRow, targetCol] = cells[slot];
+
+      if (next && next.tier === current.tier) {
+        const mergedTier = Math.min(current.tier + 1, MAX_TIER);
+        scoreGained += mergeScore(mergedTier);
+        survivors.push({ id: current.id, tier: mergedTier, row: targetRow, col: targetCol });
+        removed.push({ ...next, row: targetRow, col: targetCol });
+        mergedIds.add(current.id);
+        i += 2;
+      } else {
+        survivors.push({ id: current.id, tier: current.tier, row: targetRow, col: targetCol });
+        i += 1;
+      }
+      slot += 1;
     }
   }
-  while (result.length < GRID_SIZE) result.push(0);
-  const changed = result.some((v, idx) => v !== row[idx]);
-  return { row: result, scoreGained, changed };
-}
 
-function transpose(grid: Grid): Grid {
-  return grid[0].map((_, c) => grid.map((row) => row[c]));
-}
+  const changed =
+    removed.length > 0 ||
+    survivors.some((s) => {
+      const original = tiles.find((t) => t.id === s.id);
+      return !original || original.row !== s.row || original.col !== s.col;
+    });
 
-function reverseRows(grid: Grid): Grid {
-  return grid.map((row) => [...row].reverse());
-}
-
-export function move(grid: Grid, direction: Direction): { grid: Grid; scoreGained: number; changed: boolean } {
-  let working = grid;
-  if (direction === "up" || direction === "down") working = transpose(working);
-  if (direction === "right" || direction === "down") working = reverseRows(working);
-
-  let scoreGained = 0;
-  let changed = false;
-  const processed = working.map((row) => {
-    const res = slideRowLeft(row);
-    scoreGained += res.scoreGained;
-    if (res.changed) changed = true;
-    return res.row;
-  });
-
-  let result = processed;
-  if (direction === "right" || direction === "down") result = reverseRows(result);
-  if (direction === "up" || direction === "down") result = transpose(result);
-
-  return { grid: result, scoreGained, changed };
+  return { tiles: survivors, removed, mergedIds, scoreGained, changed };
 }
 
 /** True if there's an empty cell or any two orthogonally-adjacent tiles share a tier (i.e. some move would still change the board). */
-export function hasMovesAvailable(grid: Grid): boolean {
-  if (emptyCells(grid).length > 0) return true;
+export function hasMovesAvailable(tiles: Tile[]): boolean {
+  if (tiles.length < GRID_SIZE * GRID_SIZE) return true;
+  const grid = buildGrid(tiles);
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
-      const v = grid[r][c];
-      if (c + 1 < GRID_SIZE && grid[r][c + 1] === v) return true;
-      if (r + 1 < GRID_SIZE && grid[r + 1][c] === v) return true;
+      const tier = grid[r][c]?.tier;
+      if (c + 1 < GRID_SIZE && grid[r][c + 1]?.tier === tier) return true;
+      if (r + 1 < GRID_SIZE && grid[r + 1][c]?.tier === tier) return true;
     }
   }
   return false;
 }
 
-export function hasReachedMaxTier(grid: Grid): boolean {
-  return grid.some((row) => row.some((v) => v === MAX_TIER));
+export function hasReachedMaxTier(tiles: Tile[]): boolean {
+  return tiles.some((t) => t.tier === MAX_TIER);
 }

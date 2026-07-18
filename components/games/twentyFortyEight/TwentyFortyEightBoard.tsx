@@ -4,22 +4,36 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import Image from "next/image";
 import {
   GRID_SIZE,
-  emptyGrid,
   hasMovesAvailable,
   hasReachedMaxTier,
+  initialTiles,
   move,
-  spawnRandomTile,
+  spawnTile,
   tileFaceSrc,
   type Direction,
-  type Grid,
+  type Tile,
 } from "./twentyFortyEightConfig";
 
 /** Minimum swipe distance (css px) before it counts as a directional gesture, not a tap. */
 const SWIPE_THRESHOLD = 24;
 
-function initialGrid(): Grid {
-  return spawnRandomTile(spawnRandomTile(emptyGrid()));
+/** Must match the gap-2 / p-2 / inset-2 Tailwind classes below (8px each) -- used to compute each tile's slide offset in JS. */
+const CELL_GAP_PX = 8;
+const SLIDE_TRANSITION_MS = 150;
+const MERGE_PULSE_MS = 200;
+
+function tileBoxSize() {
+  return `calc((100% - ${(GRID_SIZE - 1) * CELL_GAP_PX}px) / ${GRID_SIZE})`;
 }
+
+function tileOffset(row: number, col: number) {
+  return {
+    x: `calc(${col} * (100% + ${CELL_GAP_PX}px))`,
+    y: `calc(${row} * (100% + ${CELL_GAP_PX}px))`,
+  };
+}
+
+const POP_ANIMATION_MS = 160;
 
 export function TwentyFortyEightBoard({
   onScoreChange,
@@ -30,16 +44,33 @@ export function TwentyFortyEightBoard({
   onGameOver: (finalScore: number) => void;
   onWin: () => void;
 }) {
-  const [grid, setGrid] = useState<Grid>(initialGrid);
+  const [tiles, setTiles] = useState<Tile[]>(initialTiles);
+  const [removedTiles, setRemovedTiles] = useState<Tile[]>([]);
+  const [mergedIds, setMergedIds] = useState<Set<number>>(new Set());
+  const [spawnedIds, setSpawnedIds] = useState<Set<number>>(
+    () => new Set(tiles.map((t) => t.id)),
+  );
   const [score, setScore] = useState(0);
-  const gridRef = useRef(grid);
+  const tilesRef = useRef(tiles);
   const scoreRef = useRef(0);
   const wonRef = useRef(false);
   const gameOverRef = useRef(false);
+  const removeTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const mergeTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const spawnTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     onScoreChange(score);
   }, [score, onScoreChange]);
+
+  useEffect(() => {
+    spawnTimeoutRef.current = setTimeout(() => setSpawnedIds(new Set()), POP_ANIMATION_MS);
+    return () => {
+      clearTimeout(removeTimeoutRef.current);
+      clearTimeout(mergeTimeoutRef.current);
+      clearTimeout(spawnTimeoutRef.current);
+    };
+  }, []);
 
   // Callbacks read through refs (kept current each render) so the keydown
   // listener below can be attached once at mount instead of re-subscribing
@@ -53,24 +84,39 @@ export function TwentyFortyEightBoard({
 
   function applyMove(direction: Direction) {
     if (gameOverRef.current) return;
-    const result = move(gridRef.current, direction);
+    const result = move(tilesRef.current, direction);
     if (!result.changed) return;
 
-    const spawned = spawnRandomTile(result.grid);
-    gridRef.current = spawned;
-    setGrid(spawned);
+    const spawned = spawnTile(result.tiles);
+    const nextTiles = spawned ? [...result.tiles, spawned] : result.tiles;
+    tilesRef.current = nextTiles;
+    setTiles(nextTiles);
+
+    clearTimeout(removeTimeoutRef.current);
+    setRemovedTiles(result.removed);
+    removeTimeoutRef.current = setTimeout(() => setRemovedTiles([]), SLIDE_TRANSITION_MS);
+
+    clearTimeout(mergeTimeoutRef.current);
+    setMergedIds(result.mergedIds);
+    mergeTimeoutRef.current = setTimeout(() => setMergedIds(new Set()), MERGE_PULSE_MS);
+
+    clearTimeout(spawnTimeoutRef.current);
+    setSpawnedIds(spawned ? new Set([spawned.id]) : new Set());
+    if (spawned) {
+      spawnTimeoutRef.current = setTimeout(() => setSpawnedIds(new Set()), POP_ANIMATION_MS);
+    }
 
     if (result.scoreGained > 0) {
       scoreRef.current += result.scoreGained;
       setScore(scoreRef.current);
     }
 
-    if (!wonRef.current && hasReachedMaxTier(spawned)) {
+    if (!wonRef.current && hasReachedMaxTier(nextTiles)) {
       wonRef.current = true;
       onWinRef.current();
     }
 
-    if (!hasMovesAvailable(spawned)) {
+    if (!hasMovesAvailable(nextTiles)) {
       gameOverRef.current = true;
       onGameOverRef.current(scoreRef.current);
     }
@@ -117,32 +163,57 @@ export function TwentyFortyEightBoard({
 
   return (
     <div
-      className="grid aspect-square w-full max-w-[300px] touch-none select-none gap-2 rounded-card-sm border-2 border-ink bg-cream p-2 shadow-card"
-      style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}
+      className="relative aspect-square w-full max-w-[300px] touch-none select-none rounded-card-sm border-2 border-ink bg-cream p-2 shadow-card"
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerCancel={() => {
         touchStart.current = null;
       }}
     >
-      {grid.map((row, r) =>
-        row.map((tier, c) => (
-          <div
-            key={`${r}-${c}`}
-            className="relative flex items-center justify-center rounded-card-sm border-2 border-ink/10 bg-paper"
-          >
-            {tier > 0 && (
-              <Image
-                src={tileFaceSrc(tier)}
-                alt=""
-                fill
-                sizes="80px"
-                className="animate-[tile-pop_160ms_ease-out] rounded-card-sm object-cover p-0.5"
-              />
-            )}
-          </div>
-        )),
-      )}
+      <div
+        className="grid h-full w-full gap-2"
+        style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}
+      >
+        {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => (
+          <div key={i} className="rounded-card-sm border-2 border-ink/10 bg-paper" />
+        ))}
+      </div>
+
+      <div className="absolute inset-2">
+        {[...removedTiles, ...tiles].map((tile) => {
+          const { x, y } = tileOffset(tile.row, tile.col);
+          return (
+            <div
+              key={tile.id}
+              className="absolute transition-transform ease-in-out"
+              style={{
+                width: tileBoxSize(),
+                height: tileBoxSize(),
+                transform: `translate(${x}, ${y})`,
+                transitionDuration: `${SLIDE_TRANSITION_MS}ms`,
+              }}
+            >
+              <div
+                className={`relative h-full w-full rounded-card-sm ${
+                  mergedIds.has(tile.id)
+                    ? "animate-[tile-merge-pulse_200ms_ease-out]"
+                    : spawnedIds.has(tile.id)
+                      ? "animate-[tile-pop_160ms_ease-out]"
+                      : ""
+                }`}
+              >
+                <Image
+                  src={tileFaceSrc(tile.tier)}
+                  alt=""
+                  fill
+                  sizes="80px"
+                  className="rounded-card-sm object-cover p-0.5"
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
