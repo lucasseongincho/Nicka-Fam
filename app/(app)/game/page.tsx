@@ -74,6 +74,12 @@ export default function GamePage() {
         iconSrc="/suika-faces/6.png"
         onClick={() => router.push("/game/2048")}
       />
+      <GameCard
+        title="Candy Match"
+        subtitle="solo · match 3 to clear"
+        iconSrc="/suika-faces/4.png"
+        onClick={() => router.push("/game/candy-match")}
+      />
     </div>
   );
 }

@@ -166,3 +166,13 @@ export interface TwentyFortyEightScoreRecord {
   bestScore: number;
   updatedAt: Timestamp;
 }
+
+/**
+ * Candy match (match-3 game). Solo play, same one-doc-per-person shape as
+ * SuikaScoreRecord -- see `candyMatchScores`.
+ */
+export interface CandyMatchScoreRecord {
+  personId: string;
+  bestScore: number;
+  updatedAt: Timestamp;
+}
