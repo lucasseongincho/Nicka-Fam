@@ -22,16 +22,57 @@ type PieceBody = Matter.Body & {
   overLineSince: number | null;
 };
 
+type Spark = { dx: number; dy: number; size: number; wobble: number };
+type Celebration = { x: number; y: number; startTime: number; sparks: Spark[] };
+
+// Tuned so the whole burst reads in ~1-1.2s and stays well inside a
+// narrow phone-width canvas (small max radius / drift distances).
+const CELEBRATION_RING_COUNT = 3;
+const CELEBRATION_RING_STAGGER_MS = 140;
+const CELEBRATION_RING_DURATION_MS = 650;
+const CELEBRATION_RING_MAX_RADIUS = 68;
+const CELEBRATION_SPARK_COUNT = 16;
+const CELEBRATION_SPARK_DURATION_MS = 1100;
+const CELEBRATION_DURATION_MS = 1150;
+
+const BASE_RESTITUTION = 0.2;
+
 export function SuikaCanvas({
   onScoreChange,
   onNextStageChange,
   onGameOver,
+  paused = false,
+  bouncyTrigger = 0,
 }: {
   onScoreChange: (score: number) => void;
   onNextStageChange: (stage: number) => void;
   onGameOver: (finalScore: number) => void;
+  /** While true, drops (and drags-in-progress) are ignored -- used to freeze input during the 1992 overlay. */
+  paused?: boolean;
+  /** Bumped by the parent each time the title-tap konami code fires; a change (vs. the value seen at mount) flips bouncy mode on for the rest of this run. */
+  bouncyTrigger?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pausedRef = useRef(paused);
+  const bouncyRef = useRef(false);
+  const worldRef = useRef<Matter.World | null>(null);
+  const seenBouncyTriggerRef = useRef(bouncyTrigger);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
+
+  useEffect(() => {
+    if (bouncyTrigger === seenBouncyTriggerRef.current || bouncyRef.current) return;
+    seenBouncyTriggerRef.current = bouncyTrigger;
+    bouncyRef.current = true;
+    const world = worldRef.current;
+    if (world) {
+      for (const body of Matter.Composite.allBodies(world)) {
+        if (!body.isStatic) body.restitution *= 2;
+      }
+    }
+  }, [bouncyTrigger]);
 
   useEffect(() => {
     const canvasEl = canvasRef.current;
@@ -54,6 +95,7 @@ export function SuikaCanvas({
     const engine = Matter.Engine.create();
     engine.gravity.y = 1;
     const world = engine.world;
+    worldRef.current = world;
 
     const wallOptions = { isStatic: true, friction: 0.4 };
     Matter.World.add(world, [
@@ -104,7 +146,7 @@ export function SuikaCanvas({
     function addPiece(stage: number, x: number, y: number) {
       const radius = SUIKA_DIAMETERS[stage] / 2;
       const body = Matter.Bodies.circle(clampForRadius(x, radius), y, radius, {
-        restitution: 0.2,
+        restitution: bouncyRef.current ? BASE_RESTITUTION * 2 : BASE_RESTITUTION,
         friction: 0.4,
         frictionAir: 0.0008,
       }) as PieceBody;
@@ -115,7 +157,7 @@ export function SuikaCanvas({
     }
 
     function handleDrop() {
-      if (gameOver || !canDrop) return;
+      if (gameOver || !canDrop || pausedRef.current) return;
       canDrop = false;
       addPiece(currentStage, pointerX, SUIKA_DROP_SPAWN_Y);
       currentStage = nextStage;
@@ -138,7 +180,7 @@ export function SuikaCanvas({
     let isHolding = false;
 
     function handlePointerDown(e: PointerEvent) {
-      if (gameOver) return;
+      if (gameOver || pausedRef.current) return;
       isHolding = true;
       pointerX = xFromClientX(e.clientX);
       canvas.setPointerCapture(e.pointerId);
@@ -161,6 +203,56 @@ export function SuikaCanvas({
     canvas.addEventListener("pointerup", handlePointerUp);
     canvas.addEventListener("pointercancel", handlePointerCancel);
 
+    const celebrations: Celebration[] = [];
+    function spawnCelebration(x: number, y: number) {
+      const sparks: Spark[] = Array.from({ length: CELEBRATION_SPARK_COUNT }, () => ({
+        dx: (Math.random() - 0.5) * 46,
+        dy: -(38 + Math.random() * 48),
+        size: 1.5 + Math.random() * 2,
+        wobble: Math.random() * Math.PI * 2,
+      }));
+      celebrations.push({ x, y, startTime: performance.now(), sparks });
+    }
+
+    function drawCelebrations(now: number) {
+      for (let i = celebrations.length - 1; i >= 0; i--) {
+        const c = celebrations[i];
+        const elapsed = now - c.startTime;
+        if (elapsed > CELEBRATION_DURATION_MS) {
+          celebrations.splice(i, 1);
+          continue;
+        }
+
+        for (let r = 0; r < CELEBRATION_RING_COUNT; r++) {
+          const ringElapsed = elapsed - r * CELEBRATION_RING_STAGGER_MS;
+          if (ringElapsed < 0 || ringElapsed > CELEBRATION_RING_DURATION_MS) continue;
+          const t = ringElapsed / CELEBRATION_RING_DURATION_MS;
+          const radius = 6 + Math.pow(t, 0.6) * CELEBRATION_RING_MAX_RADIUS;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, radius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(234,150,50,${(1 - t) * 0.8})`;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        const sparkT = Math.min(elapsed / CELEBRATION_SPARK_DURATION_MS, 1);
+        if (sparkT < 1) {
+          for (const s of c.sparks) {
+            const px = c.x + s.dx * sparkT + Math.sin(sparkT * 6 + s.wobble) * 3;
+            const py = c.y + s.dy * sparkT;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(px, py, s.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,200,120,${1 - sparkT})`;
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+      }
+    }
+
     const merging = new Set<number>();
     function handleCollisions(event: Matter.IEventCollision<Matter.Engine>) {
       for (const pair of event.pairs) {
@@ -178,6 +270,10 @@ export function SuikaCanvas({
         const midY = (a.position.y + b.position.y) / 2;
         Matter.World.remove(world, a);
         Matter.World.remove(world, b);
+
+        if (stage === SUIKA_STAGE_COUNT - 1) {
+          spawnCelebration(midX, midY);
+        }
 
         const resultStage = stage + 1;
         score += mergeScore(resultStage > SUIKA_STAGE_COUNT - 1 ? SUIKA_STAGE_COUNT : resultStage);
@@ -211,7 +307,7 @@ export function SuikaCanvas({
       }
     }
 
-    function draw(bodies: PieceBody[]) {
+    function draw(bodies: PieceBody[], now: number) {
       ctx.clearRect(0, 0, SUIKA_FIELD_WIDTH, SUIKA_FIELD_HEIGHT);
 
       ctx.save();
@@ -251,6 +347,8 @@ export function SuikaCanvas({
         if (img.complete) ctx.drawImage(img, x - radius, SUIKA_DROP_SPAWN_Y - radius, d, d);
         ctx.restore();
       }
+
+      drawCelebrations(now);
     }
 
     function tick() {
@@ -259,7 +357,7 @@ export function SuikaCanvas({
         (b) => !b.isStatic,
       ) as PieceBody[];
       checkGameOver(bodies, now);
-      draw(bodies);
+      draw(bodies, now);
       rafId = requestAnimationFrame(tick);
     }
     rafId = requestAnimationFrame(tick);
@@ -275,6 +373,7 @@ export function SuikaCanvas({
       Matter.Runner.stop(runner);
       Matter.World.clear(world, false);
       Matter.Engine.clear(engine);
+      worldRef.current = null;
     };
   }, [onGameOver, onNextStageChange, onScoreChange]);
 
