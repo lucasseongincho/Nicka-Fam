@@ -112,7 +112,7 @@ export function CandyMatchGame() {
         onReshuffle={() => setShowReshuffleToast(true)}
       />
       <p className="text-center text-[11px] text-ink/40">
-        tap a candy, then tap an adjacent one to swap &middot; match 3+ to clear
+        drag a candy into a neighbor to swap &middot; match 3+ to clear
       </p>
 
       {showReshuffleToast && (

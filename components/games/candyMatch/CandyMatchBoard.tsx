@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import Image from "next/image";
 import {
   GRID_SIZE,
   candyFaceSrc,
+  evaluateSwap,
   hasAnyValidMove,
   initialTiles,
-  isAdjacent,
   reshuffle,
   resolveBoard,
   swapPositions,
-  wouldMatch,
   type Position,
+  type SpecialType,
   type Tile,
 } from "./candyMatchConfig";
 
@@ -21,6 +21,15 @@ const CELL_GAP_PX = 4;
 const SWAP_DURATION_MS = 150;
 const CLEAR_DURATION_MS = 200;
 const FALL_DURATION_MS = 220;
+/** Minimum drag distance (css px) before it counts as a directional swipe, not a tap. */
+const DRAG_THRESHOLD = 14;
+
+const SPECIAL_BADGES: Record<SpecialType, string> = {
+  "striped-row": "↔️",
+  "striped-col": "↕️",
+  wrapped: "💣",
+  "color-bomb": "🌈",
+};
 
 function tileBoxSize() {
   return `calc((100% - ${(GRID_SIZE - 1) * CELL_GAP_PX}px) / ${GRID_SIZE})`;
@@ -51,11 +60,12 @@ export function CandyMatchBoard({
   movesLimit: number;
 }) {
   const [tiles, setTiles] = useState<Tile[]>(initialTiles);
-  const [selected, setSelected] = useState<Position | null>(null);
+  const [draggingPos, setDraggingPos] = useState<Position | null>(null);
   const [clearingIds, setClearingIds] = useState<Set<number>>(new Set());
   const [spawnedIds, setSpawnedIds] = useState<Set<number>>(
     () => new Set(tiles.map((t) => t.id)),
   );
+  const [createdSpecialIds, setCreatedSpecialIds] = useState<Set<number>>(new Set());
   const [busy, setBusy] = useState(false);
 
   const tilesRef = useRef(tiles);
@@ -86,12 +96,13 @@ export function CandyMatchBoard({
     busyRef.current = true;
     setBusy(true);
 
+    const { valid, seeds } = evaluateSwap(tilesRef.current, from, to);
     const swapped = swapPositions(tilesRef.current, from, to);
     tilesRef.current = swapped;
     setTiles(swapped);
     await sleep(SWAP_DURATION_MS);
 
-    if (!wouldMatch(swapped)) {
+    if (!valid) {
       const reverted = swapPositions(swapped, from, to);
       tilesRef.current = reverted;
       setTiles(reverted);
@@ -101,9 +112,10 @@ export function CandyMatchBoard({
       return;
     }
 
-    const { steps } = resolveBoard(swapped);
+    const { steps } = resolveBoard(swapped, seeds);
     for (const step of steps) {
       setClearingIds(new Set(step.clearedTileIds));
+      setCreatedSpecialIds(new Set(step.createdSpecialIds));
       await sleep(CLEAR_DURATION_MS);
 
       tilesRef.current = step.tilesAfter;
@@ -116,6 +128,7 @@ export function CandyMatchBoard({
 
       await sleep(FALL_DURATION_MS);
       setSpawnedIds(new Set());
+      setCreatedSpecialIds(new Set());
     }
 
     movesLeftRef.current -= 1;
@@ -140,26 +153,41 @@ export function CandyMatchBoard({
     }
   }
 
-  function handleTileTap(pos: Position) {
+  const dragStartRef = useRef<{ row: number; col: number; x: number; y: number } | null>(null);
+
+  function handlePointerDown(e: ReactPointerEvent<HTMLButtonElement>, row: number, col: number) {
     if (busyRef.current || gameOverRef.current) return;
-    if (!selected) {
-      setSelected(pos);
-      return;
-    }
-    if (selected.row === pos.row && selected.col === pos.col) {
-      setSelected(null);
-      return;
-    }
-    if (!isAdjacent(selected, pos)) {
-      setSelected(pos);
-      return;
-    }
-    setSelected(null);
-    void attemptSwap(selected, pos);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragStartRef.current = { row, col, x: e.clientX, y: e.clientY };
+    setDraggingPos({ row, col });
+  }
+
+  function handlePointerUp(e: ReactPointerEvent<HTMLButtonElement>) {
+    const start = dragStartRef.current;
+    dragStartRef.current = null;
+    setDraggingPos(null);
+    if (!start) return;
+
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < DRAG_THRESHOLD) return;
+
+    const horizontal = Math.abs(dx) > Math.abs(dy);
+    const dRow = horizontal ? 0 : dy > 0 ? 1 : -1;
+    const dCol = horizontal ? (dx > 0 ? 1 : -1) : 0;
+    const to = { row: start.row + dRow, col: start.col + dCol };
+    if (to.row < 0 || to.row >= GRID_SIZE || to.col < 0 || to.col >= GRID_SIZE) return;
+
+    void attemptSwap({ row: start.row, col: start.col }, to);
+  }
+
+  function handlePointerCancel() {
+    dragStartRef.current = null;
+    setDraggingPos(null);
   }
 
   return (
-    <div className="relative aspect-square w-full max-w-[300px] select-none rounded-card-sm border-2 border-ink bg-cream p-2 shadow-card">
+    <div className="relative aspect-square w-full max-w-[300px] touch-none select-none rounded-card-sm border-2 border-ink bg-cream p-2 shadow-card">
       <div
         className="grid h-full w-full gap-1"
         style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}
@@ -167,15 +195,17 @@ export function CandyMatchBoard({
         {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => {
           const row = Math.floor(i / GRID_SIZE);
           const col = i % GRID_SIZE;
-          const isSelected = selected?.row === row && selected?.col === col;
+          const isDragging = draggingPos?.row === row && draggingPos?.col === col;
           return (
             <button
               key={i}
               type="button"
               disabled={busy}
-              onClick={() => handleTileTap({ row, col })}
+              onPointerDown={(e) => handlePointerDown(e, row, col)}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerCancel}
               className={`cursor-pointer rounded-card-sm border-2 bg-paper transition-colors disabled:cursor-default ${
-                isSelected ? "border-orange" : "border-ink/10"
+                isDragging ? "border-orange" : "border-ink/10"
               }`}
             />
           );
@@ -187,6 +217,7 @@ export function CandyMatchBoard({
           const { x, y } = tileOffset(tile.row, tile.col);
           const isClearing = clearingIds.has(tile.id);
           const isSpawning = spawnedIds.has(tile.id);
+          const isCreatedSpecial = createdSpecialIds.has(tile.id);
           return (
             <div
               key={tile.id}
@@ -202,9 +233,11 @@ export function CandyMatchBoard({
                 className={`relative h-full w-full rounded-card-sm transition-all ${
                   isClearing
                     ? "scale-0 opacity-0 duration-200"
-                    : isSpawning
-                      ? "animate-[tile-pop_180ms_ease-out]"
-                      : ""
+                    : isCreatedSpecial
+                      ? "animate-[tile-merge-pulse_200ms_ease-out]"
+                      : isSpawning
+                        ? "animate-[tile-pop_180ms_ease-out]"
+                        : ""
                 }`}
               >
                 <Image
@@ -212,8 +245,15 @@ export function CandyMatchBoard({
                   alt=""
                   fill
                   sizes="60px"
-                  className="rounded-card-sm object-cover p-0.5"
+                  className={`rounded-card-sm object-cover p-0.5 ${
+                    tile.special ? "ring-2 ring-orange" : ""
+                  }`}
                 />
+                {tile.special && (
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-card text-[10px] leading-none shadow-card">
+                    {SPECIAL_BADGES[tile.special]}
+                  </span>
+                )}
               </div>
             </div>
           );
