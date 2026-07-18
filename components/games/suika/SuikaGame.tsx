@@ -199,7 +199,7 @@ export function SuikaGame({ bouncyTrigger = 0 }: { bouncyTrigger?: number }) {
       )}
 
       {toastVisible && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
+        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-40 flex justify-center px-4">
           <div className="rounded-chip bg-ink px-4 py-2 text-[13px] font-semibold text-cream shadow-card">
             bouncy mode on
           </div>

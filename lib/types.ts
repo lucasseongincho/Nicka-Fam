@@ -156,3 +156,13 @@ export interface SuikaScoreRecord {
   bestScore: number;
   updatedAt: Timestamp;
 }
+
+/**
+ * 2048 (face-tile merge game). Solo play, same one-doc-per-person shape as
+ * SuikaScoreRecord -- see `twentyFortyEightScores`.
+ */
+export interface TwentyFortyEightScoreRecord {
+  personId: string;
+  bestScore: number;
+  updatedAt: Timestamp;
+}

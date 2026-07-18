@@ -37,3 +37,14 @@ a {
 a:hover {
   color: var(--color-orange-dark);
 }
+
+@keyframes tile-pop {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

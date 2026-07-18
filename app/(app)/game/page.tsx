@@ -68,6 +68,12 @@ export default function GamePage() {
         iconSrc="/suika-faces/11.png"
         onClick={() => router.push("/game/suika")}
       />
+      <GameCard
+        title="2048"
+        subtitle="solo · merge to the max"
+        iconSrc="/suika-faces/6.png"
+        onClick={() => router.push("/game/2048")}
+      />
     </div>
   );
 }
