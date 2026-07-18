@@ -185,7 +185,7 @@ export function SuikaGame({ bouncyTrigger = 0 }: { bouncyTrigger?: number }) {
           {eggPhase === "photo" && (
             // eslint-disable-next-line @next/next/no-img-element -- full-bleed overlay photo, dimensions unknown ahead of time
             <img
-              src="/easter-eggs/jaehee-1992.png"
+              src="/easter-eggs/jaehee-1992.jpg"
               alt=""
               className="h-full w-full object-cover"
             />
