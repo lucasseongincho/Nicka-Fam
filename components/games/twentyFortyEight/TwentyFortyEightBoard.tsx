@@ -163,7 +163,7 @@ export function TwentyFortyEightBoard({
 
   return (
     <div
-      className="relative aspect-square w-full max-w-[300px] touch-none select-none rounded-card-sm border-2 border-ink bg-cream p-2 shadow-card"
+      className="relative aspect-square w-full max-w-[300px] touch-none select-none overflow-hidden rounded-card-sm border-2 border-ink bg-cream p-2 shadow-card"
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerCancel={() => {

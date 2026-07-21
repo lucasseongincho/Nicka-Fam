@@ -188,7 +188,7 @@ export function CandyMatchBoard({
   }
 
   return (
-    <div className="relative aspect-square w-full max-w-[300px] touch-none select-none rounded-card-sm border-2 border-ink bg-cream p-2 shadow-card">
+    <div className="relative aspect-square w-full max-w-[300px] touch-none select-none overflow-hidden rounded-card-sm border-2 border-ink bg-cream p-2 shadow-card">
       <div
         className="grid h-full w-full gap-1"
         style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}
