@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import Image from "next/image";
 import {
   GRID_SIZE,
@@ -17,23 +23,51 @@ import {
 /** Minimum swipe distance (css px) before it counts as a directional gesture, not a tap. */
 const SWIPE_THRESHOLD = 24;
 
-/** Must match the gap-2 / p-2 / inset-2 Tailwind classes below (8px each) -- used to compute each tile's slide offset in JS. */
-const CELL_GAP_PX = 8;
 const SLIDE_TRANSITION_MS = 150;
 const MERGE_PULSE_MS = 200;
-
-function tileBoxSize() {
-  return `calc((100% - ${(GRID_SIZE - 1) * CELL_GAP_PX}px) / ${GRID_SIZE})`;
-}
-
-function tileOffset(row: number, col: number) {
-  return {
-    x: `calc(${col} * (100% + ${CELL_GAP_PX}px))`,
-    y: `calc(${row} * (100% + ${CELL_GAP_PX}px))`,
-  };
-}
-
 const POP_ANIMATION_MS = 160;
+
+type CellBox = { x: number; y: number; size: number };
+
+/**
+ * Measures each background cell's actual rendered box (relative to the
+ * tile layer) rather than recomputing position from a percentage-in-calc
+ * expression a second time -- a prior version positioned tiles with
+ * `translate(calc(col * (100% + gap)))`, which is exact algebraically but
+ * on iOS Safari the measured board didn't match: real device screenshots
+ * showed the last column clipped, meaning WebKit was resolving that nested
+ * calc()/percentage differently than Chrome (which reproduces it exactly).
+ * Reading the live DOM sidesteps needing every engine to agree on the math.
+ */
+function useCellBoxes(
+  gridRef: React.RefObject<HTMLDivElement | null>,
+  layerRef: React.RefObject<HTMLDivElement | null>,
+) {
+  const [boxes, setBoxes] = useState<CellBox[]>([]);
+
+  useLayoutEffect(() => {
+    const grid = gridRef.current;
+    const layer = layerRef.current;
+    if (!grid || !layer) return;
+
+    function measure() {
+      if (!grid || !layer) return;
+      const layerRect = layer.getBoundingClientRect();
+      const next = Array.from(grid.children).map((child) => {
+        const r = child.getBoundingClientRect();
+        return { x: r.left - layerRect.left, y: r.top - layerRect.top, size: r.width };
+      });
+      setBoxes(next);
+    }
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(grid);
+    return () => ro.disconnect();
+  }, [gridRef, layerRef]);
+
+  return boxes;
+}
 
 export function TwentyFortyEightBoard({
   onScoreChange,
@@ -58,6 +92,9 @@ export function TwentyFortyEightBoard({
   const removeTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mergeTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const spawnTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const layerRef = useRef<HTMLDivElement>(null);
+  const cellBoxes = useCellBoxes(gridRef, layerRef);
 
   useEffect(() => {
     onScoreChange(score);
@@ -171,6 +208,7 @@ export function TwentyFortyEightBoard({
       }}
     >
       <div
+        ref={gridRef}
         className="grid h-full w-full gap-2"
         style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}
       >
@@ -179,17 +217,17 @@ export function TwentyFortyEightBoard({
         ))}
       </div>
 
-      <div className="absolute inset-2">
+      <div ref={layerRef} className="absolute inset-2">
         {[...removedTiles, ...tiles].map((tile) => {
-          const { x, y } = tileOffset(tile.row, tile.col);
+          const box = cellBoxes[tile.row * GRID_SIZE + tile.col];
           return (
             <div
               key={tile.id}
               className="absolute transition-transform ease-in-out"
               style={{
-                width: tileBoxSize(),
-                height: tileBoxSize(),
-                transform: `translate(${x}, ${y})`,
+                width: box ? `${box.size}px` : `${100 / GRID_SIZE}%`,
+                height: box ? `${box.size}px` : `${100 / GRID_SIZE}%`,
+                transform: box ? `translate(${box.x}px, ${box.y}px)` : undefined,
                 transitionDuration: `${SLIDE_TRANSITION_MS}ms`,
               }}
             >
