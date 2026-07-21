@@ -205,8 +205,8 @@ export function CandyMatchBoard({
               onPointerDown={(e) => handlePointerDown(e, row, col)}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerCancel}
-              className={`cursor-pointer rounded-card-sm border-2 bg-paper transition-colors disabled:cursor-default ${
-                isDragging ? "border-orange" : "border-ink/10"
+              className={`cursor-pointer rounded-card-sm border-2 border-transparent bg-transparent transition-colors disabled:cursor-default ${
+                isDragging ? "border-orange" : ""
               }`}
             />
           );
