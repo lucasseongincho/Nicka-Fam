@@ -80,6 +80,12 @@ export default function GamePage() {
         iconSrc="/suika-faces/4.png"
         onClick={() => router.push("/game/candy-match")}
       />
+      <GameCard
+        title="Dino Runner"
+        subtitle="solo · outrun the crew"
+        emoji="🦖"
+        onClick={() => router.push("/game/dino-runner")}
+      />
     </div>
   );
 }

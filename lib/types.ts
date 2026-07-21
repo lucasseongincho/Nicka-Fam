@@ -176,3 +176,13 @@ export interface CandyMatchScoreRecord {
   bestScore: number;
   updatedAt: Timestamp;
 }
+
+/**
+ * Dino Runner (endless runner). Solo play, same one-doc-per-person shape as
+ * SuikaScoreRecord -- see `dinoRunnerScores`.
+ */
+export interface DinoRunnerScoreRecord {
+  personId: string;
+  bestScore: number;
+  updatedAt: Timestamp;
+}
