@@ -276,7 +276,7 @@ export function DinoRunnerCanvas({
         tabIndex={-1}
         className="dino-control-btn left-0 w-1/2 cursor-pointer appearance-none border-0 bg-transparent p-0"
       >
-        <span className="absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full bg-ink/25 text-sm text-card">
+        <span className="absolute bottom-3 left-3 flex h-14 w-14 items-center justify-center rounded-full bg-ink/30 text-2xl text-card">
           ⬆
         </span>
       </button>
@@ -287,7 +287,7 @@ export function DinoRunnerCanvas({
         tabIndex={-1}
         className="dino-control-btn right-0 w-1/2 cursor-pointer appearance-none border-0 bg-transparent p-0"
       >
-        <span className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-ink/25 text-sm text-card">
+        <span className="absolute bottom-3 right-3 flex h-14 w-14 items-center justify-center rounded-full bg-ink/30 text-2xl text-card">
           ⬇
         </span>
       </button>
