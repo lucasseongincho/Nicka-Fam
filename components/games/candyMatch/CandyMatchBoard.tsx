@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import Image from "next/image";
 import {
   GRID_SIZE,
+  candyColor,
   candyFaceSrc,
   evaluateSwap,
   hasAnyValidMove,
@@ -230,7 +231,7 @@ export function CandyMatchBoard({
               }}
             >
               <div
-                className={`relative h-full w-full rounded-card-sm transition-all ${
+                className={`relative h-full w-full rounded-full transition-all ${
                   isClearing
                     ? "scale-0 opacity-0 duration-200"
                     : isCreatedSpecial
@@ -238,16 +239,15 @@ export function CandyMatchBoard({
                       : isSpawning
                         ? "animate-[tile-pop_180ms_ease-out]"
                         : ""
-                }`}
+                } ${tile.special ? "ring-2 ring-orange ring-offset-1" : ""}`}
+                style={{ backgroundColor: candyColor(tile.type) }}
               >
                 <Image
                   src={candyFaceSrc(tile.type)}
                   alt=""
                   fill
                   sizes="60px"
-                  className={`rounded-card-sm object-cover p-0.5 ${
-                    tile.special ? "ring-2 ring-orange" : ""
-                  }`}
+                  className="rounded-full object-cover p-1"
                 />
                 {tile.special && (
                   <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-card text-[10px] leading-none shadow-card">

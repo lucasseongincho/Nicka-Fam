@@ -5,13 +5,23 @@
  */
 export const GRID_SIZE = 6;
 
-/** How many of Suika's 11 face images are in play as candy types -- no size hierarchy here, just same-type matching. */
-export const CANDY_TYPE_COUNT = 6;
+/** Dedicated candy-match face set (public/AEGIS) rather than Suika's tiles -- no size hierarchy here, just same-type matching. */
+const CANDY_FACE_NAMES = ["Bon", "Ellie", "Heeding", "Jaehee", "Lucas", "Sunnie"];
+export const CANDY_TYPE_COUNT = CANDY_FACE_NAMES.length;
 
 export const MOVES_LIMIT = 20;
 
 export function candyFaceSrc(type: number): string {
-  return `/suika-faces/${type + 1}.png`;
+  return `/AEGIS/${CANDY_FACE_NAMES[type % CANDY_FACE_NAMES.length]}.png`;
+}
+
+/** The face photos are all similar-looking snapshots of the same small
+ * group, hard to tell apart at a ~44px tile size -- a distinct color per
+ * type (Candy-Crush-style) is what actually reads as a match at a glance. */
+const CANDY_COLORS = ["#ef6461", "#f2994a", "#f2c94c", "#6fcf72", "#56ccf2", "#bb6bd9"];
+
+export function candyColor(type: number): string {
+  return CANDY_COLORS[type % CANDY_COLORS.length];
 }
 
 export function randomCandyType(): number {
