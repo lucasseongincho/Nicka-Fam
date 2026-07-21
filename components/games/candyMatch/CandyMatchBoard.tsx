@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import Image from "next/image";
 import {
   GRID_SIZE,
@@ -23,6 +17,8 @@ import {
   type Tile,
 } from "./candyMatchConfig";
 
+/** Must match the gap-1 / p-2 / inset-2 Tailwind classes below (4px / 8px) -- used to compute each tile's slide offset in JS. */
+const CELL_GAP_PX = 4;
 const SWAP_DURATION_MS = 150;
 const CLEAR_DURATION_MS = 200;
 const FALL_DURATION_MS = 220;
@@ -36,50 +32,19 @@ const SPECIAL_BADGES: Record<SpecialType, string> = {
   "color-bomb": "🌈",
 };
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function tileBoxSize() {
+  return `calc((100% - ${(GRID_SIZE - 1) * CELL_GAP_PX}px) / ${GRID_SIZE})`;
 }
 
-type CellBox = { x: number; y: number; size: number };
+function tileOffset(row: number, col: number) {
+  return {
+    x: `calc(${col} * (100% + ${CELL_GAP_PX}px))`,
+    y: `calc(${row} * (100% + ${CELL_GAP_PX}px))`,
+  };
+}
 
-/**
- * Measures each background cell's actual rendered box (relative to the
- * tile layer) rather than recomputing position from a percentage-in-calc
- * expression a second time -- a prior version positioned tiles with
- * `translate(calc(col * (100% + gap)))`, which is exact algebraically but
- * on iOS Safari the measured board didn't match: real device screenshots
- * showed the last column clipped, meaning WebKit was resolving that nested
- * calc()/percentage differently than Chrome (which reproduces it exactly).
- * Reading the live DOM sidesteps needing every engine to agree on the math.
- */
-function useCellBoxes(
-  gridRef: React.RefObject<HTMLDivElement | null>,
-  layerRef: React.RefObject<HTMLDivElement | null>,
-) {
-  const [boxes, setBoxes] = useState<CellBox[]>([]);
-
-  useLayoutEffect(() => {
-    const grid = gridRef.current;
-    const layer = layerRef.current;
-    if (!grid || !layer) return;
-
-    function measure() {
-      if (!grid || !layer) return;
-      const layerRect = layer.getBoundingClientRect();
-      const next = Array.from(grid.children).map((child) => {
-        const r = child.getBoundingClientRect();
-        return { x: r.left - layerRect.left, y: r.top - layerRect.top, size: r.width };
-      });
-      setBoxes(next);
-    }
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(grid);
-    return () => ro.disconnect();
-  }, [gridRef, layerRef]);
-
-  return boxes;
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function CandyMatchBoard({
@@ -110,9 +75,6 @@ export function CandyMatchBoard({
   const busyRef = useRef(false);
   const gameOverRef = useRef(false);
   const spawnTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const layerRef = useRef<HTMLDivElement>(null);
-  const cellBoxes = useCellBoxes(gridRef, layerRef);
 
   const onScoreChangeRef = useRef(onScoreChange);
   const onMovesChangeRef = useRef(onMovesChange);
@@ -228,7 +190,6 @@ export function CandyMatchBoard({
   return (
     <div className="relative aspect-square w-full max-w-[300px] touch-none select-none overflow-hidden rounded-card-sm border-2 border-ink bg-cream p-2 shadow-card">
       <div
-        ref={gridRef}
         className="grid h-full w-full gap-1"
         style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}
       >
@@ -252,9 +213,9 @@ export function CandyMatchBoard({
         })}
       </div>
 
-      <div ref={layerRef} className="pointer-events-none absolute inset-2">
+      <div className="pointer-events-none absolute inset-2">
         {tiles.map((tile) => {
-          const box = cellBoxes[tile.row * GRID_SIZE + tile.col];
+          const { x, y } = tileOffset(tile.row, tile.col);
           const isClearing = clearingIds.has(tile.id);
           const isSpawning = spawnedIds.has(tile.id);
           const isCreatedSpecial = createdSpecialIds.has(tile.id);
@@ -263,9 +224,9 @@ export function CandyMatchBoard({
               key={tile.id}
               className="absolute transition-transform ease-in-out"
               style={{
-                width: box ? `${box.size}px` : `${100 / GRID_SIZE}%`,
-                height: box ? `${box.size}px` : `${100 / GRID_SIZE}%`,
-                transform: box ? `translate(${box.x}px, ${box.y}px)` : undefined,
+                width: tileBoxSize(),
+                height: tileBoxSize(),
+                transform: `translate(${x}, ${y})`,
                 transitionDuration: `${SWAP_DURATION_MS}ms`,
               }}
             >
