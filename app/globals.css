@@ -69,11 +69,29 @@ a:hover {
 .dino-rotate-prompt {
   display: none;
 }
-.dino-canvas {
+.dino-canvas-wrap {
+  position: relative;
   width: 100%;
   max-width: 640px;
+}
+.dino-canvas {
+  display: block;
+  width: 100%;
   height: auto;
   aspect-ratio: 640 / 320;
+}
+/* Transparent tap-target overlays for jump/duck -- see DinoRunnerCanvas.
+   touch-action + user-select + tap-highlight all need to be neutralized
+   here, not just relying on the button being a real <button>, or mobile
+   Safari/Chrome still shows a selection/callout on press-and-hold. */
+.dino-control-btn {
+  position: absolute;
+  inset-block: 0;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 @media (orientation: portrait) and (max-width: 520px) {
@@ -104,11 +122,15 @@ a:hover {
   /* Score row keeps its content height; the canvas takes whatever's left
      and letterboxes its fixed aspect ratio inside that (object-fit) rather
      than fighting the flex column for space via width/height auto. */
-  .dino-play-area .dino-canvas {
+  .dino-play-area .dino-canvas-wrap {
     flex: 1 1 0;
     min-height: 0;
     width: 100%;
     max-width: 100%;
+    height: 100%;
+  }
+  .dino-play-area .dino-canvas {
+    width: 100%;
     height: 100%;
     object-fit: contain;
   }

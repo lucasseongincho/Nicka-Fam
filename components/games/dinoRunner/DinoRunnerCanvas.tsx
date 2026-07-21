@@ -47,13 +47,21 @@ export function DinoRunnerCanvas({
   onGameOver: (finalScore: number) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const jumpButtonRef = useRef<HTMLButtonElement>(null);
+  const duckButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const canvasEl = canvasRef.current;
-    if (!canvasEl) return;
+    const jumpButtonEl = jumpButtonRef.current;
+    const duckButtonEl = duckButtonRef.current;
+    if (!canvasEl || !jumpButtonEl || !duckButtonEl) return;
     const context = canvasEl.getContext("2d");
     if (!context) return;
-    const canvas: HTMLCanvasElement = canvasEl;
+    // Rebind to plain, non-nullable locals: TS narrowing from the guards
+    // above doesn't survive into the closures below (event handlers), but a
+    // fresh const with an inferred non-nullable type does.
+    const jumpButton: HTMLButtonElement = jumpButtonEl;
+    const duckButton: HTMLButtonElement = duckButtonEl;
     const ctx: CanvasRenderingContext2D = context;
 
     let vy = 0;
@@ -90,38 +98,41 @@ export function DinoRunnerCanvas({
       vy = JUMP_VELOCITY;
     }
 
-    function xFromClientX(clientX: number) {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = CANVAS_WIDTH / rect.width;
-      return (clientX - rect.left) * scaleX;
-    }
-
-    function handlePointerDown(e: PointerEvent) {
+    // Real <button> overlays rather than raw canvas pointer-position math --
+    // this is what actually gets touch-action/user-select/tap-highlight
+    // right on mobile instead of fighting the browser's own gesture
+    // handling. preventDefault on pointerdown keeps them from taking focus,
+    // which matters because a focused button re-fires on every subsequent
+    // Space *keyup* (see handleKeyUp below) -- without this a tapped button
+    // would reappear as an accidental "click" the next time Space is hit.
+    function handleJumpPointerDown(e: PointerEvent) {
+      e.preventDefault();
       if (gameOver) return;
-      const x = xFromClientX(e.clientX);
-      if (x < CANVAS_WIDTH / 2) {
-        jump();
-      } else {
-        isDucking = true;
-        activeDuckPointerId = e.pointerId;
-        canvas.setPointerCapture(e.pointerId);
-      }
+      jump();
     }
-    function handlePointerUp(e: PointerEvent) {
+    function handleDuckPointerDown(e: PointerEvent) {
+      e.preventDefault();
+      if (gameOver) return;
+      isDucking = true;
+      activeDuckPointerId = e.pointerId;
+      duckButton.setPointerCapture(e.pointerId);
+    }
+    function handleDuckPointerUp(e: PointerEvent) {
       if (e.pointerId === activeDuckPointerId) {
         isDucking = false;
         activeDuckPointerId = null;
       }
     }
-    function handlePointerCancel(e: PointerEvent) {
+    function handleDuckPointerCancel(e: PointerEvent) {
       if (e.pointerId === activeDuckPointerId) {
         isDucking = false;
         activeDuckPointerId = null;
       }
     }
-    canvas.addEventListener("pointerdown", handlePointerDown);
-    canvas.addEventListener("pointerup", handlePointerUp);
-    canvas.addEventListener("pointercancel", handlePointerCancel);
+    jumpButton.addEventListener("pointerdown", handleJumpPointerDown);
+    duckButton.addEventListener("pointerdown", handleDuckPointerDown);
+    duckButton.addEventListener("pointerup", handleDuckPointerUp);
+    duckButton.addEventListener("pointercancel", handleDuckPointerCancel);
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.code === "Space" || e.code === "ArrowUp") {
@@ -133,7 +144,17 @@ export function DinoRunnerCanvas({
       }
     }
     function handleKeyUp(e: KeyboardEvent) {
-      if (e.code === "ArrowDown") isDucking = false;
+      // preventDefault here too, not just keydown -- browsers activate a
+      // focused button's click on Space's keyUP, and something (e.g. the
+      // play/leaderboard toggle) is basically always focused from before
+      // the run started. Without this, every jump press also re-clicks
+      // whatever's focused.
+      if (e.code === "Space" || e.code === "ArrowUp") {
+        e.preventDefault();
+      } else if (e.code === "ArrowDown") {
+        e.preventDefault();
+        isDucking = false;
+      }
     }
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
@@ -231,20 +252,45 @@ export function DinoRunnerCanvas({
 
     return () => {
       cancelAnimationFrame(rafId);
-      canvas.removeEventListener("pointerdown", handlePointerDown);
-      canvas.removeEventListener("pointerup", handlePointerUp);
-      canvas.removeEventListener("pointercancel", handlePointerCancel);
+      jumpButton.removeEventListener("pointerdown", handleJumpPointerDown);
+      duckButton.removeEventListener("pointerdown", handleDuckPointerDown);
+      duckButton.removeEventListener("pointerup", handleDuckPointerUp);
+      duckButton.removeEventListener("pointercancel", handleDuckPointerCancel);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, [personImages, activePersonId, otherPersonIds, onScoreChange, onGameOver]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={CANVAS_WIDTH}
-      height={CANVAS_HEIGHT}
-      className="dino-canvas touch-none rounded-card-sm border-2 border-ink bg-cream shadow-card"
-    />
+    <div className="dino-canvas-wrap">
+      <canvas
+        ref={canvasRef}
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
+        className="dino-canvas touch-none rounded-card-sm border-2 border-ink bg-cream shadow-card"
+      />
+      <button
+        ref={jumpButtonRef}
+        type="button"
+        aria-label="Jump"
+        tabIndex={-1}
+        className="dino-control-btn left-0 w-1/2 cursor-pointer appearance-none border-0 bg-transparent p-0"
+      >
+        <span className="absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-full bg-ink/25 text-sm text-card">
+          ⬆
+        </span>
+      </button>
+      <button
+        ref={duckButtonRef}
+        type="button"
+        aria-label="Duck"
+        tabIndex={-1}
+        className="dino-control-btn right-0 w-1/2 cursor-pointer appearance-none border-0 bg-transparent p-0"
+      >
+        <span className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-ink/25 text-sm text-card">
+          ⬇
+        </span>
+      </button>
+    </div>
   );
 }
