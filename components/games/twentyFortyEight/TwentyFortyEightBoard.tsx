@@ -200,7 +200,7 @@ export function TwentyFortyEightBoard({
 
   return (
     <div
-      className="relative aspect-square w-full max-w-[260px] touch-none select-none overflow-hidden rounded-card-sm border-2 border-ink bg-cream p-1.5 shadow-card"
+      className="relative aspect-square w-full max-w-[300px] touch-none select-none overflow-hidden rounded-card-sm border-2 border-ink bg-cream p-2 shadow-card"
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerCancel={() => {
@@ -209,7 +209,7 @@ export function TwentyFortyEightBoard({
     >
       <div
         ref={gridRef}
-        className="grid h-full w-full gap-1.5"
+        className="grid h-full w-full gap-2"
         style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}
       >
         {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => (
@@ -217,7 +217,7 @@ export function TwentyFortyEightBoard({
         ))}
       </div>
 
-      <div ref={layerRef} className="absolute inset-1.5">
+      <div ref={layerRef} className="absolute inset-2">
         {[...removedTiles, ...tiles].map((tile) => {
           const box = cellBoxes[tile.row * GRID_SIZE + tile.col];
           return (
