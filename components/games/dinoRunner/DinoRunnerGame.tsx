@@ -152,7 +152,7 @@ export function DinoRunnerGame() {
           onGameOver={handleGameOver}
         />
         <p className="dino-hide-in-fullscreen text-center text-[11px] text-ink/40">
-          tap top to jump, bottom to duck &middot; or ↑/space to jump, ↓ to duck
+          tap left to jump, right to duck &middot; or ↑/space to jump, ↓ to duck
         </p>
       </div>
     </>

@@ -90,16 +90,16 @@ export function DinoRunnerCanvas({
       vy = JUMP_VELOCITY;
     }
 
-    function yFromClientY(clientY: number) {
+    function xFromClientX(clientX: number) {
       const rect = canvas.getBoundingClientRect();
-      const scaleY = CANVAS_HEIGHT / rect.height;
-      return (clientY - rect.top) * scaleY;
+      const scaleX = CANVAS_WIDTH / rect.width;
+      return (clientX - rect.left) * scaleX;
     }
 
     function handlePointerDown(e: PointerEvent) {
       if (gameOver) return;
-      const y = yFromClientY(e.clientY);
-      if (y < CANVAS_HEIGHT / 2) {
+      const x = xFromClientX(e.clientX);
+      if (x < CANVAS_WIDTH / 2) {
         jump();
       } else {
         isDucking = true;
