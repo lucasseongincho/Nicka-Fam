@@ -186,3 +186,13 @@ export interface DinoRunnerScoreRecord {
   bestScore: number;
   updatedAt: Timestamp;
 }
+
+/**
+ * Bubble Bobble (trap-and-pop platformer). Solo play, same one-doc-per-person
+ * shape as SuikaScoreRecord -- see `bubbleBobbleScores`.
+ */
+export interface BubbleBobbleScoreRecord {
+  personId: string;
+  bestScore: number;
+  updatedAt: Timestamp;
+}

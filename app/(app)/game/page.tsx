@@ -86,6 +86,12 @@ export default function GamePage() {
         emoji="🦖"
         onClick={() => router.push("/game/dino-runner")}
       />
+      <GameCard
+        title="Bubble Bobble"
+        subtitle="solo · trap and pop"
+        emoji="🫧"
+        onClick={() => router.push("/game/bubble-bobble")}
+      />
     </div>
   );
 }
