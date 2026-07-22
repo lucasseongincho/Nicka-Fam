@@ -5,7 +5,10 @@ const eslintConfig = [
   ...nextCoreWebVitals,
   ...nextTypescript,
   {
-    ignores: ["design/**"],
+    // design/** and public/bubble-bobble/support.js are generated
+    // asset-preview tooling artifacts, not app source -- same reasoning
+    // as the existing design/** exclusion.
+    ignores: ["design/**", "public/bubble-bobble/support.js"],
   },
 ];
 

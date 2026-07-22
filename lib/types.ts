@@ -196,3 +196,27 @@ export interface BubbleBobbleScoreRecord {
   bestScore: number;
   updatedAt: Timestamp;
 }
+
+/**
+ * Bulletin board post -- one doc per thought in `bulletinPosts`, newest
+ * first. `commentCount` is denormalized (kept in sync when comments are
+ * added/removed) the same way Bill.roundCount is, so the feed can show a
+ * count without subscribing to every post's comments subcollection.
+ */
+export interface BulletinPost {
+  id: string;
+  authorId: string;
+  text: string;
+  /** emoji -> personIds who reacted with it. A person may react with more than one emoji. */
+  reactions: Record<string, string[]>;
+  commentCount: number;
+  createdAt: Timestamp;
+}
+
+/** One reply, stored under bulletinPosts/{postId}/comments. */
+export interface BulletinComment {
+  id: string;
+  authorId: string;
+  text: string;
+  createdAt: Timestamp;
+}
