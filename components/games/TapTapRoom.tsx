@@ -77,14 +77,14 @@ export function TapTapRoom({
           onPointerUp={() => setPressed(false)}
           onPointerLeave={() => setPressed(false)}
           onPointerCancel={() => setPressed(false)}
-          className="relative mb-6 h-40 w-40 select-none"
+          className="relative mb-6 h-48 w-48 select-none"
         >
           <Image
             src={pressed ? "/games/red-button-pushed.png" : "/games/red-button.png"}
             alt=""
-            width={160}
-            height={160}
-            className="pointer-events-none h-40 w-40 object-contain"
+            width={192}
+            height={192}
+            className="pointer-events-none h-48 w-48 object-contain"
             priority
           />
           <span className="pointer-events-none absolute inset-0 flex items-center justify-center font-heading text-2xl font-bold text-card">
