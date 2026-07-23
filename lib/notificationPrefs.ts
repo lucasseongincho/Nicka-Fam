@@ -7,6 +7,7 @@ export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
   photos: true,
   board: true,
   leaderboards: true,
+  bills: true,
 };
 
 /**

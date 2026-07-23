@@ -40,6 +40,8 @@ export interface SendCategoryNotificationInput {
   body: string;
   url?: string;
   recipientOverride?: { personId: string; title?: string; body: string };
+  /** If set, restricts the recipient pool to these personIds (still filtered by their own category pref) instead of everyone with the category enabled. */
+  recipientIds?: string[];
 }
 
 // Merged with defaults, not just falling back when absent -- a person who
@@ -58,11 +60,14 @@ function copyFor(input: SendCategoryNotificationInput, personId: string): { titl
 }
 
 /**
- * Sends to everyone with `category` enabled except the actor. One person
- * (recipientOverride, e.g. a photo/post's owner) can get different copy
- * than everyone else. Any token FCM reports as no-longer-registered is
- * pruned from that person's doc -- devices get uninstalled/tokens rotate,
- * and there's no other cleanup path for that.
+ * Sends to everyone with `category` enabled except the actor -- or, if
+ * `recipientIds` is given, only to that specific set of people (still
+ * subject to their own category preference), for targeted notifications
+ * like "you got paid back" where broadcasting to the whole group would be
+ * wrong. One person (recipientOverride, e.g. a photo/post's owner) can get
+ * different copy than everyone else. Any token FCM reports as
+ * no-longer-registered is pruned from that person's doc -- devices get
+ * uninstalled/tokens rotate, and there's no other cleanup path for that.
  */
 export async function sendCategoryNotification(input: SendCategoryNotificationInput): Promise<void> {
   const app = adminApp();
@@ -73,7 +78,10 @@ export async function sendCategoryNotification(input: SendCategoryNotificationIn
   const people = peopleSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Person);
 
   const recipients = people.filter(
-    (p) => p.id !== input.actorId && prefsAllow(p.notificationPrefs, input.category),
+    (p) =>
+      p.id !== input.actorId &&
+      prefsAllow(p.notificationPrefs, input.category) &&
+      (!input.recipientIds || input.recipientIds.includes(p.id)),
   );
   if (recipients.length === 0) return;
 

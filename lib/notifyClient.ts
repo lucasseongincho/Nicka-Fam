@@ -1,4 +1,4 @@
-export type NotifyCategory = "calendar" | "photos" | "board" | "leaderboards";
+export type NotifyCategory = "calendar" | "photos" | "board" | "leaderboards" | "bills";
 
 export interface NotifyPayload {
   category: NotifyCategory;
@@ -10,6 +10,8 @@ export interface NotifyPayload {
   url?: string;
   /** One specific person (e.g. a photo/post's owner) who should see different copy than the rest of the category's recipients. */
   recipientOverride?: { personId: string; title?: string; body: string };
+  /** If set, only these personIds are notified (still subject to their own category preference) instead of broadcasting to everyone with the category enabled -- for targeted notifications like "you got paid back", where notifying the whole group would be wrong. */
+  recipientIds?: string[];
 }
 
 /**

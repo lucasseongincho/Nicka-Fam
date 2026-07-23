@@ -3,7 +3,9 @@
 import { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { listenBill, listenRounds } from "@/lib/bills";
+import { listenBill, listenRounds, setPaymentSent } from "@/lib/bills";
+import { formatRelativeTime } from "@/lib/dateUtils";
+import { notifyCategory } from "@/lib/notifyClient";
 import { computeSettlement } from "@/lib/settlement";
 import { usePeople } from "@/contexts/PersonContext";
 import type { Bill, Round } from "@/lib/types";
@@ -16,7 +18,7 @@ export default function SettlePage({
 }) {
   const { billId } = use(params);
   const router = useRouter();
-  const { people } = usePeople();
+  const { people, activePersonId } = usePeople();
   const [bill, setBill] = useState<Bill | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [sharing, setSharing] = useState(false);
@@ -31,6 +33,26 @@ export default function SettlePage({
   }, [people]);
 
   const transfers = useMemo(() => computeSettlement(rounds), [rounds]);
+
+  // Payment-sent status is tracked per (bill, ower) as a whole, not per
+  // settlement transfer -- see the BillPayment doc comment in lib/types.ts.
+  // In the rare case one ower's netted debt spans multiple creditors, a
+  // single toggle marks all of that ower's rows sent at once, so every
+  // affected creditor (not just the one on the clicked row) needs notifying.
+  const handleToggleSent = async (owerId: string, sent: boolean) => {
+    await setPaymentSent(billId, owerId, sent);
+    if (!sent || !bill) return;
+    const ower = personOf(owerId);
+    const creditorIds = [...new Set(transfers.filter((t) => t.from === owerId).map((t) => t.to))];
+    void notifyCategory({
+      category: "bills",
+      actorId: owerId,
+      recipientIds: creditorIds,
+      title: "bills",
+      body: `${ower?.name ?? "someone"} marked their split as sent`,
+      url: `/split/${billId}/settle`,
+    });
+  };
 
   const handleShare = async () => {
     if (!bill) return;
@@ -95,37 +117,65 @@ export default function SettlePage({
         transfers.map((t, i) => {
           const from = personOf(t.from);
           const to = personOf(t.to);
+          const payment = bill.payments?.[t.from];
+          const paid = payment?.paid ?? false;
+          const isOwer = activePersonId === t.from;
+          const paidAtLabel = paid ? formatRelativeTime(payment?.paidAt?.toDate?.() ?? null) : null;
           return (
-            <Card
-              key={i}
-              className="mb-2.5 flex items-center justify-between px-3.5 py-3"
-            >
-              <div className="flex items-center gap-2 font-body text-sm font-medium text-ink">
-                {from && (
-                  <Image
-                    src={from.photoUrl}
-                    alt={from.name}
-                    width={28}
-                    height={28}
-                    className="h-7 w-7 rounded-full border-2 border-ink object-cover"
-                  />
-                )}
-                <span>{from?.name ?? t.from}</span>
-                <span className="text-orange">→</span>
-                {to && (
-                  <Image
-                    src={to.photoUrl}
-                    alt={to.name}
-                    width={28}
-                    height={28}
-                    className="h-7 w-7 rounded-full border-2 border-ink object-cover"
-                  />
-                )}
-                <span>{to?.name ?? t.to}</span>
+            <Card key={i} className="mb-2.5 px-3.5 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-body text-sm font-medium text-ink">
+                  {from && (
+                    <Image
+                      src={from.photoUrl}
+                      alt={from.name}
+                      width={28}
+                      height={28}
+                      className="h-7 w-7 rounded-full border-2 border-ink object-cover"
+                    />
+                  )}
+                  <span>{from?.name ?? t.from}</span>
+                  <span className="text-orange">→</span>
+                  {to && (
+                    <Image
+                      src={to.photoUrl}
+                      alt={to.name}
+                      width={28}
+                      height={28}
+                      className="h-7 w-7 rounded-full border-2 border-ink object-cover"
+                    />
+                  )}
+                  <span>{to?.name ?? t.to}</span>
+                </div>
+                <p
+                  className={`font-heading text-[17px] font-semibold ${paid ? "text-ink/40 line-through" : "text-ink"}`}
+                >
+                  ${t.amt}
+                </p>
               </div>
-              <p className="font-heading text-[17px] font-semibold text-ink">
-                ${t.amt}
-              </p>
+
+              <div className="mt-2 flex items-center justify-end border-t-2 border-ink/10 pt-2">
+                {isOwer ? (
+                  <button
+                    onClick={() => void handleToggleSent(t.from, !paid)}
+                    className={`cursor-pointer rounded-pill border-2 px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      paid
+                        ? "border-teal bg-teal/15 text-teal"
+                        : "border-ink bg-orange text-card shadow-button"
+                    }`}
+                  >
+                    {paid ? `✓ sent · ${paidAtLabel}` : "mark as sent"}
+                  </button>
+                ) : (
+                  <span
+                    className={`rounded-pill border-2 px-3 py-1.5 text-xs font-semibold ${
+                      paid ? "border-teal/40 bg-teal/10 text-teal" : "border-ink/20 text-ink/40"
+                    }`}
+                  >
+                    {paid ? `✓ sent · ${paidAtLabel}` : "not sent yet"}
+                  </span>
+                )}
+              </div>
             </Card>
           );
         })

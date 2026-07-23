@@ -6,6 +6,7 @@ export interface NotificationPrefs {
   photos: boolean;
   board: boolean;
   leaderboards: boolean;
+  bills: boolean;
 }
 
 export interface Person {
@@ -18,6 +19,19 @@ export interface Person {
   fcmTokens?: string[];
 }
 
+/**
+ * One person's payment-sent status for a bill, keyed by their personId in
+ * Bill.payments. Tracked per-person for the bill as a whole (not per
+ * settlement transfer) since computeSettlement's netted transfers aren't
+ * stable identities -- adding/editing/deleting a round can reshuffle which
+ * creditor a debtor's transfer pairs with, but "I've sent my share of this
+ * bill" is a statement about the person, not about one specific pairing.
+ */
+export interface BillPayment {
+  paid: boolean;
+  paidAt: Timestamp | null;
+}
+
 export interface Bill {
   id: string;
   title: string;
@@ -25,6 +39,8 @@ export interface Bill {
   /** denormalized from rounds, kept in sync when rounds are added */
   totalAmount: number;
   roundCount: number;
+  /** personId (an ower, per computeSettlement) -> their payment status for this bill. Absent entries -- and bills predating this feature -- mean unpaid. */
+  payments?: Record<string, BillPayment>;
   createdBy: string;
   createdAt: Timestamp;
 }

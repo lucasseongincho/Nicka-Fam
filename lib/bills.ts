@@ -141,6 +141,19 @@ export async function deleteRound(
   await batch.commit();
 }
 
+/**
+ * Marks (or un-marks) a participant's payment-sent status for this bill as
+ * a whole -- see the BillPayment doc comment in lib/types.ts for why this
+ * is per-person rather than per-settlement-transfer. Dotted path so it
+ * only ever touches this one person's entry, same idiom as
+ * `notificationPrefs.${key}` in lib/notificationPrefs.ts.
+ */
+export async function setPaymentSent(billId: string, personId: string, sent: boolean) {
+  await updateDoc(doc(db, "bills", billId), {
+    [`payments.${personId}`]: { paid: sent, paidAt: sent ? serverTimestamp() : null },
+  });
+}
+
 export async function toggleNoDrink(
   billId: string,
   roundId: string,

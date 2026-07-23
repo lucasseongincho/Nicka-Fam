@@ -3,7 +3,7 @@ import type { NotifyCategory } from "@/lib/notifyClient";
 
 export const runtime = "nodejs";
 
-const CATEGORIES: NotifyCategory[] = ["calendar", "photos", "board", "leaderboards"];
+const CATEGORIES: NotifyCategory[] = ["calendar", "photos", "board", "leaderboards", "bills"];
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -19,6 +19,7 @@ export async function POST(request: Request) {
       body: body.body,
       url: typeof body.url === "string" ? body.url : undefined,
       recipientOverride: body.recipientOverride,
+      recipientIds: Array.isArray(body.recipientIds) ? body.recipientIds : undefined,
     });
   } catch (err) {
     // A push failure should never surface as an error to whoever just
