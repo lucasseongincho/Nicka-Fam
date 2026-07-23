@@ -3,6 +3,7 @@
 import { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { listenBill, listenRounds, setBillParticipants, toggleNoDrink } from "@/lib/bills";
+import { formatMoney } from "@/lib/money";
 import { usePeople } from "@/contexts/PersonContext";
 import type { Bill, Round } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
@@ -93,7 +94,7 @@ export default function BillDetailPage({
           <div className="flex items-start justify-between font-heading text-base font-semibold text-ink">
             <span>{round.label}</span>
             <div className="flex items-center gap-2">
-              <span>${round.amount}</span>
+              <span>{formatMoney(round.amount)}</span>
               <button
                 onClick={() => setEditingRound(round)}
                 className="cursor-pointer font-body text-xs font-medium text-ink/40 hover:text-orange"
@@ -139,7 +140,7 @@ export default function BillDetailPage({
 
       <div className="sticky bottom-0 -mx-5 flex items-center justify-between border-t-2 border-ink bg-paper px-5 py-3.5">
         <p className="font-heading text-lg font-semibold text-ink">
-          total ${bill.totalAmount}
+          total {formatMoney(bill.totalAmount)}
         </p>
         <Button onClick={() => router.push(`/split/${billId}/settle`)}>
           settle up ⚖️

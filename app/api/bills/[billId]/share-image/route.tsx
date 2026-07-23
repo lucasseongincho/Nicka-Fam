@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { formatMoney } from "@/lib/money";
 import { computeSettlement } from "@/lib/settlement";
 import type { Bill, Person, Round } from "@/lib/types";
 
@@ -109,7 +110,7 @@ export async function GET(
                 <span>{to?.name ?? t.to}</span>
               </div>
               <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#241C16" }}>
-                ${t.amt}
+                {formatMoney(t.amt)}
               </div>
             </div>
           );
@@ -117,7 +118,7 @@ export async function GET(
 
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: 24 }}>
           <div style={{ display: "flex", fontSize: 28, fontWeight: 700, color: "#241C16" }}>
-            total ${bill.totalAmount}
+            total {formatMoney(bill.totalAmount)}
           </div>
         </div>
       </div>

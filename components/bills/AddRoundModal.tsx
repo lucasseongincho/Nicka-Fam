@@ -51,17 +51,22 @@ export function AddRoundModal({
   const submit = async () => {
     if (!valid || !activePersonId) return;
     setSubmitting(true);
+    // Rounded to the nearest cent here, at the source -- computeSettlement's
+    // cent-exact math assumes every round amount is already clean to 2
+    // decimals; without this, someone typing "12.345" would store a
+    // third decimal place that can never be split evenly to the cent.
+    const cleanAmount = Math.round(amountNum * 100) / 100;
     if (editingRound) {
       await updateRound(billId, editingRound.id, editingRound.amount, {
         label: label.trim(),
-        amount: amountNum,
+        amount: cleanAmount,
         payerId,
         participantIds,
       });
     } else {
       await addRound(billId, {
         label: label.trim(),
-        amount: amountNum,
+        amount: cleanAmount,
         payerId,
         participantIds,
         order: nextOrder,

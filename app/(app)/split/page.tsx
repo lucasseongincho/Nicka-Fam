@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { listenBills } from "@/lib/bills";
+import { formatMoney } from "@/lib/money";
 import type { Bill } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { CreateBillModal } from "@/components/bills/CreateBillModal";
@@ -30,7 +31,7 @@ export default function SplitListPage() {
             </p>
             <div className="flex items-center gap-2">
               <p className="font-heading text-[17px] font-semibold text-ink">
-                ${bill.totalAmount}
+                {formatMoney(bill.totalAmount)}
               </p>
               <button
                 onClick={(e) => {

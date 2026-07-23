@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { listenBill, listenRounds, setPaymentSent } from "@/lib/bills";
 import { formatRelativeTime } from "@/lib/dateUtils";
+import { formatMoney } from "@/lib/money";
 import { notifyCategory } from "@/lib/notifyClient";
 import { computeSettlement } from "@/lib/settlement";
 import { usePeople } from "@/contexts/PersonContext";
@@ -150,7 +151,7 @@ export default function SettlePage({
                 <p
                   className={`font-heading text-[17px] font-semibold ${paid ? "text-ink/40 line-through" : "text-ink"}`}
                 >
-                  ${t.amt}
+                  {formatMoney(t.amt)}
                 </p>
               </div>
 
