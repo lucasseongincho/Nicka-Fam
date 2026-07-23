@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
+import { CommentRow } from "@/components/ui/CommentRow";
+import { EmojiReactionPicker } from "@/components/ui/EmojiReactionPicker";
 import { formatRelativeTime } from "@/lib/dateUtils";
 import {
   addBulletinComment,
@@ -12,10 +14,9 @@ import {
   toggleReaction,
   updateBulletinPostText,
 } from "@/lib/bulletin";
+import { notifyCategory } from "@/lib/notifyClient";
 import type { BulletinComment, BulletinPost, Person } from "@/lib/types";
-import { BulletinCommentRow } from "./BulletinCommentRow";
 import { BULLETIN_MAX_LENGTH } from "./BulletinComposer";
-import { EmojiReactionPicker } from "./EmojiReactionPicker";
 
 export function BulletinPostCard({
   post,
@@ -28,6 +29,7 @@ export function BulletinPostCard({
 }) {
   const author = people.find((p) => p.id === post.authorId);
   const isOwn = activePersonId === post.authorId;
+  const me = people.find((p) => p.id === activePersonId);
 
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.text);
@@ -64,10 +66,34 @@ export function BulletinPostCard({
     await deleteBulletinPost(post.id);
   };
 
+  // recipientOverride personalizes the copy for the post's author ("your
+  // thought") while everyone else with the category enabled gets the
+  // generic version -- same split as PhotoCard's photo comments/reactions.
+  const notifyAuthor = (body: string, authorBody: string) => {
+    void notifyCategory({
+      category: "board",
+      actorId: activePersonId,
+      title: "the board",
+      body,
+      url: "/board",
+      recipientOverride: post.authorId !== activePersonId
+        ? { personId: post.authorId, body: authorBody }
+        : undefined,
+    });
+  };
+
+  const reactToPost = async (emoji: string, wasActive: boolean) => {
+    await toggleReaction(post.id, emoji, activePersonId, wasActive);
+    if (!wasActive) {
+      const name = me?.name ?? "someone";
+      notifyAuthor(`${name} reacted to a post`, `${name} reacted to your thought`);
+    }
+  };
+
   const pickEmoji = async (emoji: string) => {
     setShowPicker(false);
     const reactedAlready = post.reactions[emoji]?.includes(activePersonId) ?? false;
-    await toggleReaction(post.id, emoji, activePersonId, reactedAlready);
+    await reactToPost(emoji, reactedAlready);
   };
 
   const submitReply = async () => {
@@ -75,6 +101,8 @@ export function BulletinPostCard({
     if (!trimmed || busy) return;
     setBusy(true);
     await addBulletinComment(post.id, activePersonId, trimmed);
+    const name = me?.name ?? "someone";
+    notifyAuthor(`${name} replied on the board`, `${name} replied to your thought`);
     setReplyText("");
     setBusy(false);
   };
@@ -151,7 +179,7 @@ export function BulletinPostCard({
           return (
             <button
               key={emoji}
-              onClick={() => void toggleReaction(post.id, emoji, activePersonId, active)}
+              onClick={() => void reactToPost(emoji, active)}
               className={`rounded-chip border-2 px-2 py-1 text-xs font-medium transition-colors ${
                 active
                   ? "border-ink bg-orange/15 text-orange-dark"
@@ -182,9 +210,10 @@ export function BulletinPostCard({
             <p className="text-xs text-ink/40">loading replies...</p>
           ) : (
             comments.map((comment) => (
-              <BulletinCommentRow
+              <CommentRow
                 key={comment.id}
-                comment={comment}
+                text={comment.text}
+                createdAt={comment.createdAt}
                 author={people.find((p) => p.id === comment.authorId)}
                 isOwn={activePersonId === comment.authorId}
                 onDelete={() => void deleteBulletinComment(post.id, comment.id)}

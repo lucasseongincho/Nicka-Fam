@@ -37,16 +37,23 @@ export function listenCandyMatchScores(
  * (one doc per person, so there's nothing to prune). The group-best check
  * reads the current top score just before the transaction -- good enough
  * for a small trusted friend group, no need for a stronger guarantee here.
+ *
+ * `passedPersonId` is whoever the submitter just leapfrogged in rank (the
+ * closest one below their new score, if any) -- for the "X passed Y in
+ * Candy Match" push notification. bestScore only ever increases for a
+ * given person, so the only rank changes possible are the submitter
+ * moving up past people whose score falls in (oldBest, newScore].
  */
 export async function submitCandyMatchScore(
   personId: string,
   score: number,
-): Promise<{ isNewPersonalBest: boolean; isNewGroupBest: boolean }> {
+): Promise<{ isNewPersonalBest: boolean; isNewGroupBest: boolean; passedPersonId: string | null }> {
   const topSnap = await getDocs(
     query(collection(db, SCORES_COLLECTION), orderBy("bestScore", "desc")),
   );
-  const previousGroupBest = (topSnap.docs[0]?.data() as CandyMatchScoreRecord | undefined)
-    ?.bestScore ?? 0;
+  const allScores = topSnap.docs.map((d) => d.data() as CandyMatchScoreRecord);
+  const previousGroupBest = allScores[0]?.bestScore ?? 0;
+  const previousOwnBest = allScores.find((s) => s.personId === personId)?.bestScore ?? 0;
 
   const ref = doc(db, SCORES_COLLECTION, personId);
   const isNewPersonalBest = await runTransaction(db, async (tx) => {
@@ -57,8 +64,17 @@ export async function submitCandyMatchScore(
     return true;
   });
 
+  let passedPersonId: string | null = null;
+  if (isNewPersonalBest) {
+    const passed = allScores
+      .filter((s) => s.personId !== personId && s.bestScore > previousOwnBest && s.bestScore <= score)
+      .sort((a, b) => b.bestScore - a.bestScore)[0];
+    passedPersonId = passed?.personId ?? null;
+  }
+
   return {
     isNewPersonalBest,
     isNewGroupBest: isNewPersonalBest && score > previousGroupBest,
+    passedPersonId,
   };
 }

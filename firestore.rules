@@ -27,6 +27,10 @@ service cloud.firestore {
 
     match /photos/{photoId} {
       allow read, write: if true;
+
+      match /comments/{commentId} {
+        allow read, write: if true;
+      }
     }
 
     match /gameRooms/{roomId} {

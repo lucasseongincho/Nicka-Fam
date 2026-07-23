@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePeople } from "@/contexts/PersonContext";
+import { notifyCategory } from "@/lib/notifyClient";
 import { submitCandyMatchScore } from "@/lib/candyMatchScores";
 import { MOVES_LIMIT } from "./candyMatchConfig";
 import { CandyMatchResult } from "./CandyMatchResult";
@@ -31,7 +32,7 @@ type RunResult = {
 const RESHUFFLE_TOAST_MS = 2000;
 
 export function CandyMatchGame() {
-  const { activePersonId } = usePeople();
+  const { people, activePersonId } = usePeople();
   const [runKey, setRunKey] = useState(0);
   const [score, setScore] = useState(0);
   const [movesLeft, setMovesLeft] = useState(MOVES_LIMIT);
@@ -53,10 +54,22 @@ export function CandyMatchGame() {
         let isNewGroupBest = false;
         if (activePersonId) {
           try {
-            ({ isNewPersonalBest, isNewGroupBest } = await submitCandyMatchScore(
+            let passedPersonId: string | null = null;
+            ({ isNewPersonalBest, isNewGroupBest, passedPersonId } = await submitCandyMatchScore(
               activePersonId,
               finalScore,
             ));
+            if (passedPersonId) {
+              const myName = people.find((p) => p.id === activePersonId)?.name ?? "someone";
+              const passedName = people.find((p) => p.id === passedPersonId)?.name ?? "someone";
+              void notifyCategory({
+                category: "leaderboards",
+                actorId: activePersonId,
+                title: "leaderboards",
+                body: `${myName} passed ${passedName} in Candy Match`,
+                url: "/game/candy-match",
+              });
+            }
           } catch (err) {
             // Show the result either way -- a flaky connection shouldn't
             // strand the player on a frozen board without their score.
@@ -67,7 +80,7 @@ export function CandyMatchGame() {
         setSubmitting(false);
       })();
     },
-    [activePersonId],
+    [activePersonId, people],
   );
 
   const handleRetry = () => {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fredoka, Inter } from "next/font/google";
 import { PersonProvider } from "@/contexts/PersonContext";
+import { ServiceWorkerRegistrar } from "@/components/push/ServiceWorkerRegistrar";
 import "./globals.css";
 
 const fredoka = Fredoka({
@@ -36,6 +37,14 @@ export const metadata: Metadata = {
     title,
     description,
   },
+  // This is what actually matters for iOS "Add to Home Screen" behavior
+  // (a full manifest.json is more of an Android/Chrome install-prompt
+  // thing and isn't set up here) -- Safari has supported this Apple-only
+  // meta tag long before the standard web manifest existed.
+  appleWebApp: {
+    capable: true,
+    title,
+  },
 };
 
 export default function RootLayout({
@@ -48,7 +57,10 @@ export default function RootLayout({
       <body
         className={`${fredoka.variable} ${inter.variable} font-body antialiased`}
       >
-        <PersonProvider>{children}</PersonProvider>
+        <PersonProvider>
+          <ServiceWorkerRegistrar />
+          {children}
+        </PersonProvider>
       </body>
     </html>
   );

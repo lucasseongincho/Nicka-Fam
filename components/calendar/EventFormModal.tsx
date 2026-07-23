@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePeople } from "@/contexts/PersonContext";
 import { createEvent, deleteEvent, updateEvent } from "@/lib/calendar";
+import { notifyCategory } from "@/lib/notifyClient";
 import type { CalendarEvent } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -14,7 +15,7 @@ export function EventFormModal({
   editingEvent?: CalendarEvent;
   onClose: () => void;
 }) {
-  const { activePersonId } = usePeople();
+  const { activePerson, activePersonId } = usePeople();
   const [title, setTitle] = useState(editingEvent?.title ?? "");
   const [date, setDate] = useState(editingEvent?.date ?? "");
   const [time, setTime] = useState(editingEvent?.time ?? "");
@@ -37,11 +38,22 @@ export function EventFormModal({
         time: time.trim() || undefined,
       });
     } else if (activePersonId) {
+      const trimmedTitle = title.trim();
       await createEvent({
-        title: title.trim(),
+        title: trimmedTitle,
         date: date || undefined,
         time: time.trim() || undefined,
         createdBy: activePersonId,
+      });
+      const name = activePerson?.name ?? "someone";
+      void notifyCategory({
+        category: "calendar",
+        actorId: activePersonId,
+        title: "calendar",
+        body: date
+          ? `${name} added a plan: ${trimmedTitle}`
+          : `${name} shared an idea: ${trimmedTitle}`,
+        url: "/calendar",
       });
     }
     onClose();

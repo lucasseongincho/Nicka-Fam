@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePeople } from "@/contexts/PersonContext";
+import { notifyCategory } from "@/lib/notifyClient";
 import { submitDinoRunnerScore } from "@/lib/dinoRunnerScores";
 import { DinoRunnerResult } from "./DinoRunnerResult";
 
@@ -80,10 +81,22 @@ export function DinoRunnerGame() {
         let isNewGroupBest = false;
         if (activePersonId) {
           try {
-            ({ isNewPersonalBest, isNewGroupBest } = await submitDinoRunnerScore(
+            let passedPersonId: string | null = null;
+            ({ isNewPersonalBest, isNewGroupBest, passedPersonId } = await submitDinoRunnerScore(
               activePersonId,
               finalScore,
             ));
+            if (passedPersonId) {
+              const myName = people.find((p) => p.id === activePersonId)?.name ?? "someone";
+              const passedName = people.find((p) => p.id === passedPersonId)?.name ?? "someone";
+              void notifyCategory({
+                category: "leaderboards",
+                actorId: activePersonId,
+                title: "leaderboards",
+                body: `${myName} passed ${passedName} in Dino Runner`,
+                url: "/game/dino-runner",
+              });
+            }
           } catch (err) {
             // Show the result either way -- a flaky connection shouldn't
             // strand the player on a frozen run without their score.
@@ -94,7 +107,7 @@ export function DinoRunnerGame() {
         setSubmitting(false);
       })();
     },
-    [activePersonId],
+    [activePersonId, people],
   );
 
   const handleRetry = () => {

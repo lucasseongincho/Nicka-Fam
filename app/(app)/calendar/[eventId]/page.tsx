@@ -11,6 +11,7 @@ import {
   setAvailability,
 } from "@/lib/calendar";
 import { buildMonthGrid, formatDateBadge, monthLabel } from "@/lib/dateUtils";
+import { notifyCategory } from "@/lib/notifyClient";
 import type { Availability, CalendarEvent } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -263,7 +264,18 @@ export default function OpenPlanDetailPage({
           candidates={sortedOverlap}
           defaultDate={sortedOverlap[0]?.iso ?? ""}
           onClose={() => setShowFinalize(false)}
-          onFinalized={() => router.push("/calendar")}
+          onFinalized={() => {
+            if (activePersonId) {
+              void notifyCategory({
+                category: "calendar",
+                actorId: activePersonId,
+                title: "calendar",
+                body: `${event?.title ?? "a plan"} is confirmed!`,
+                url: "/calendar",
+              });
+            }
+            router.push("/calendar");
+          }}
         />
       )}
     </div>

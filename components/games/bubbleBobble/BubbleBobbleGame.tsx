@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePeople } from "@/contexts/PersonContext";
+import { notifyCategory } from "@/lib/notifyClient";
 import { submitBubbleBobbleScore } from "@/lib/bubbleBobbleScores";
 import { BubbleBobbleResult } from "./BubbleBobbleResult";
 import { BUBBLE_BOBBLE_LEVEL_COUNT } from "./bubbleBobbleLevels";
@@ -99,10 +100,22 @@ export function BubbleBobbleGame() {
         let isNewGroupBest = false;
         if (activePersonId) {
           try {
-            ({ isNewPersonalBest, isNewGroupBest } = await submitBubbleBobbleScore(
+            let passedPersonId: string | null = null;
+            ({ isNewPersonalBest, isNewGroupBest, passedPersonId } = await submitBubbleBobbleScore(
               activePersonId,
               finalScore,
             ));
+            if (passedPersonId) {
+              const myName = people.find((p) => p.id === activePersonId)?.name ?? "someone";
+              const passedName = people.find((p) => p.id === passedPersonId)?.name ?? "someone";
+              void notifyCategory({
+                category: "leaderboards",
+                actorId: activePersonId,
+                title: "leaderboards",
+                body: `${myName} passed ${passedName} in Bubble Bobble`,
+                url: "/game/bubble-bobble",
+              });
+            }
           } catch (err) {
             // Show the result either way -- a flaky connection shouldn't
             // strand the player on a frozen run without their score.
@@ -113,7 +126,7 @@ export function BubbleBobbleGame() {
         setSubmitting(false);
       })();
     },
-    [activePersonId],
+    [activePersonId, people],
   );
 
   const handleRetry = () => {

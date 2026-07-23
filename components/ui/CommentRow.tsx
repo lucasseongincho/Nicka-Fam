@@ -1,14 +1,18 @@
+import type { Timestamp } from "firebase/firestore";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatRelativeTime } from "@/lib/dateUtils";
-import type { BulletinComment, Person } from "@/lib/types";
+import type { Person } from "@/lib/types";
 
-export function BulletinCommentRow({
-  comment,
+/** Generic enough to render a BulletinComment or a PhotoComment -- both are just {text, createdAt} plus an author looked up by the caller. */
+export function CommentRow({
+  text,
+  createdAt,
   author,
   isOwn,
   onDelete,
 }: {
-  comment: BulletinComment;
+  text: string;
+  createdAt: Timestamp;
   author: Person | undefined;
   isOwn: boolean;
   onDelete: () => void;
@@ -24,10 +28,10 @@ export function BulletinCommentRow({
         <p className="text-[13px] text-ink">
           <span className="font-medium">{author?.name ?? "someone"}</span>{" "}
           <span className="text-ink/40">
-            · {formatRelativeTime(comment.createdAt?.toDate?.() ?? null)}
+            · {formatRelativeTime(createdAt?.toDate?.() ?? null)}
           </span>
         </p>
-        <p className="text-[13px] text-ink/75">{comment.text}</p>
+        <p className="text-[13px] text-ink/75">{text}</p>
       </div>
       {isOwn && (
         <button

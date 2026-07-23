@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { usePeople } from "@/contexts/PersonContext";
+import { notifyCategory } from "@/lib/notifyClient";
 import { submitSuikaScore } from "@/lib/suikaScores";
 import { suikaFaceSrc } from "./suikaConfig";
 import { SuikaResult } from "./SuikaResult";
@@ -43,7 +44,7 @@ type RunResult = {
 };
 
 export function SuikaGame({ bouncyTrigger = 0 }: { bouncyTrigger?: number }) {
-  const { activePersonId } = usePeople();
+  const { people, activePersonId } = usePeople();
   const [runKey, setRunKey] = useState(0);
   const [score, setScore] = useState(0);
   const [nextStage, setNextStage] = useState<number | null>(null);
@@ -104,10 +105,22 @@ export function SuikaGame({ bouncyTrigger = 0 }: { bouncyTrigger?: number }) {
         let isNewGroupBest = false;
         if (activePersonId) {
           try {
-            ({ isNewPersonalBest, isNewGroupBest } = await submitSuikaScore(
+            let passedPersonId: string | null = null;
+            ({ isNewPersonalBest, isNewGroupBest, passedPersonId } = await submitSuikaScore(
               activePersonId,
               finalScore,
             ));
+            if (passedPersonId) {
+              const myName = people.find((p) => p.id === activePersonId)?.name ?? "someone";
+              const passedName = people.find((p) => p.id === passedPersonId)?.name ?? "someone";
+              void notifyCategory({
+                category: "leaderboards",
+                actorId: activePersonId,
+                title: "leaderboards",
+                body: `${myName} passed ${passedName} in Suika Game`,
+                url: "/game/suika",
+              });
+            }
           } catch (err) {
             // Show the result either way -- a flaky connection shouldn't
             // strand the player on a frozen board without their score.
@@ -118,7 +131,7 @@ export function SuikaGame({ bouncyTrigger = 0 }: { bouncyTrigger?: number }) {
         setSubmitting(false);
       })();
     },
-    [activePersonId],
+    [activePersonId, people],
   );
 
   const handleRetry = () => {

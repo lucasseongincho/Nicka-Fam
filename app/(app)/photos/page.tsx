@@ -1,29 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePeople } from "@/contexts/PersonContext";
 import { listenPhotos } from "@/lib/photos";
-import { formatRelativeTime } from "@/lib/dateUtils";
 import type { Photo } from "@/lib/types";
 import { SegmentedToggle } from "@/components/ui/SegmentedToggle";
 import { Mascot } from "@/components/ui/Mascot";
 import { Button } from "@/components/ui/Button";
+import { PhotoCard } from "@/components/photos/PhotoCard";
 import { UploadPhotoModal } from "@/components/photos/UploadPhotoModal";
 import { EditPhotoModal } from "@/components/photos/EditPhotoModal";
 
 export default function PhotosPage() {
-  const { people } = usePeople();
+  const { people, activePersonId } = usePeople();
   const [view, setView] = useState<"feed" | "grid">("feed");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [showUpload, setShowUpload] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
 
   useEffect(() => listenPhotos(setPhotos), []);
-
-  const nameOf = useMemo(() => {
-    const map = new Map(people.map((p) => [p.id, p]));
-    return (id: string) => map.get(id);
-  }, [people]);
 
   if (photos.length === 0) {
     return (
@@ -64,52 +59,16 @@ export default function PhotosPage() {
         </button>
       </div>
 
-      {view === "feed" &&
-        photos.map((photo) => {
-          const person = nameOf(photo.uploadedBy);
-          return (
-            <div
-              key={photo.id}
-              className="mb-3.5 overflow-hidden rounded-card border-2 border-ink bg-card"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={photo.url}
-                alt={photo.caption || "shared photo"}
-                className="block h-[220px] w-full object-cover"
-              />
-              <div className="px-3 py-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-body text-[13px] text-ink">
-                    {person && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={person.photoUrl}
-                        alt={person.name}
-                        className="h-5 w-5 rounded-full object-cover"
-                      />
-                    )}
-                    <span className="font-medium">
-                      {person?.name ?? "someone"}
-                    </span>
-                    <span className="text-ink/40">
-                      · {formatRelativeTime(photo.createdAt?.toDate?.() ?? null)}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setEditingPhoto(photo)}
-                    className="cursor-pointer text-xs font-medium text-ink/40 hover:text-orange"
-                  >
-                    edit
-                  </button>
-                </div>
-                {photo.caption && (
-                  <p className="mt-1 text-sm text-ink/75">{photo.caption}</p>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      {view === "feed" && activePersonId &&
+        photos.map((photo) => (
+          <PhotoCard
+            key={photo.id}
+            photo={photo}
+            people={people}
+            activePersonId={activePersonId}
+            onEdit={() => setEditingPhoto(photo)}
+          />
+        ))}
 
       {view === "grid" && (
         <div className="grid grid-cols-3 gap-1.5 pb-14">

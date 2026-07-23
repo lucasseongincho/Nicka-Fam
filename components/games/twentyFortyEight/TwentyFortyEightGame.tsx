@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePeople } from "@/contexts/PersonContext";
+import { notifyCategory } from "@/lib/notifyClient";
 import { submitTwentyFortyEightScore } from "@/lib/twentyFortyEightScores";
 import { TwentyFortyEightResult } from "./TwentyFortyEightResult";
 
@@ -30,7 +31,7 @@ type RunResult = {
 const WIN_TOAST_MS = 2200;
 
 export function TwentyFortyEightGame() {
-  const { activePersonId } = usePeople();
+  const { people, activePersonId } = usePeople();
   const [runKey, setRunKey] = useState(0);
   const [score, setScore] = useState(0);
   const [result, setResult] = useState<RunResult | null>(null);
@@ -51,10 +52,22 @@ export function TwentyFortyEightGame() {
         let isNewGroupBest = false;
         if (activePersonId) {
           try {
-            ({ isNewPersonalBest, isNewGroupBest } = await submitTwentyFortyEightScore(
+            let passedPersonId: string | null = null;
+            ({ isNewPersonalBest, isNewGroupBest, passedPersonId } = await submitTwentyFortyEightScore(
               activePersonId,
               finalScore,
             ));
+            if (passedPersonId) {
+              const myName = people.find((p) => p.id === activePersonId)?.name ?? "someone";
+              const passedName = people.find((p) => p.id === passedPersonId)?.name ?? "someone";
+              void notifyCategory({
+                category: "leaderboards",
+                actorId: activePersonId,
+                title: "leaderboards",
+                body: `${myName} passed ${passedName} in 2048`,
+                url: "/game/2048",
+              });
+            }
           } catch (err) {
             // Show the result either way -- a flaky connection shouldn't
             // strand the player on a frozen board without their score.
@@ -65,7 +78,7 @@ export function TwentyFortyEightGame() {
         setSubmitting(false);
       })();
     },
-    [activePersonId],
+    [activePersonId, people],
   );
 
   const handleRetry = () => {

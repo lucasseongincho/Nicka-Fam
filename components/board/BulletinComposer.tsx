@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { usePeople } from "@/contexts/PersonContext";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { addBulletinPost } from "@/lib/bulletin";
+import { notifyCategory } from "@/lib/notifyClient";
 
 export const BULLETIN_MAX_LENGTH = 200;
 
 export function BulletinComposer({ authorId }: { authorId: string }) {
+  const { activePerson } = usePeople();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -16,6 +19,13 @@ export function BulletinComposer({ authorId }: { authorId: string }) {
     if (!trimmed || submitting) return;
     setSubmitting(true);
     await addBulletinPost(authorId, trimmed);
+    void notifyCategory({
+      category: "board",
+      actorId: authorId,
+      title: "the board",
+      body: `${activePerson?.name ?? "someone"} posted on the board`,
+      url: "/board",
+    });
     setText("");
     setSubmitting(false);
   };

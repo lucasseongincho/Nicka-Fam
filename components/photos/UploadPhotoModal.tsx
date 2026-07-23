@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { usePeople } from "@/contexts/PersonContext";
+import { notifyCategory } from "@/lib/notifyClient";
 import { uploadPhoto } from "@/lib/photos";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
 export function UploadPhotoModal({ onClose }: { onClose: () => void }) {
-  const { activePersonId } = usePeople();
+  const { activePerson, activePersonId } = usePeople();
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
@@ -22,6 +23,13 @@ export function UploadPhotoModal({ onClose }: { onClose: () => void }) {
     if (!file || !activePersonId) return;
     setUploading(true);
     await uploadPhoto(file, caption.trim(), activePersonId);
+    void notifyCategory({
+      category: "photos",
+      actorId: activePersonId,
+      title: "new photo",
+      body: `${activePerson?.name ?? "someone"} added a new photo`,
+      url: "/photos",
+    });
     onClose();
   };
 

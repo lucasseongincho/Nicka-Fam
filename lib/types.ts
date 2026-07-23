@@ -1,9 +1,21 @@
 import type { Timestamp } from "firebase/firestore";
 
+/** One toggle per push-notification category. Category keys match NotifyCategory in lib/notifyClient.ts. */
+export interface NotificationPrefs {
+  calendar: boolean;
+  photos: boolean;
+  board: boolean;
+  leaderboards: boolean;
+}
+
 export interface Person {
   id: string;
   name: string;
   photoUrl: string;
+  /** Absent on people created before push notifications existed -- treat as all-true, see lib/notificationPrefs.ts. */
+  notificationPrefs?: NotificationPrefs;
+  /** FCM device tokens for this person, one per browser/device they've enabled push on. */
+  fcmTokens?: string[];
 }
 
 export interface Bill {
@@ -59,6 +71,18 @@ export interface Photo {
   url: string;
   caption: string;
   uploadedBy: string;
+  createdAt: Timestamp;
+  /** emoji -> personIds who reacted with it. Absent on photos uploaded before this existed -- treat as {}. */
+  reactions?: Record<string, string[]>;
+  /** Denormalized count of this photo's comments subcollection. Absent on legacy docs -- treat as 0. */
+  commentCount?: number;
+}
+
+/** One reply, stored under photos/{photoId}/comments. Same shape as BulletinComment. */
+export interface PhotoComment {
+  id: string;
+  authorId: string;
+  text: string;
   createdAt: Timestamp;
 }
 
