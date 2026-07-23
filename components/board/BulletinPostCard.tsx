@@ -5,6 +5,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
 import { CommentRow } from "@/components/ui/CommentRow";
 import { EmojiReactionPicker } from "@/components/ui/EmojiReactionPicker";
+import { ReactionsModal } from "@/components/ui/ReactionsModal";
 import { formatRelativeTime } from "@/lib/dateUtils";
 import {
   addBulletinComment,
@@ -34,6 +35,7 @@ export function BulletinPostCard({
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.text);
   const [showPicker, setShowPicker] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<BulletinComment[] | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -196,6 +198,14 @@ export function BulletinPostCard({
         >
           + react
         </button>
+        {reactionEntries.length > 0 && (
+          <button
+            onClick={() => setShowReactions(true)}
+            className="cursor-pointer text-xs font-medium text-ink/40 hover:text-orange"
+          >
+            who reacted?
+          </button>
+        )}
         <button
           onClick={() => setShowComments((v) => !v)}
           className="ml-auto cursor-pointer rounded-chip border-2 border-ink/15 bg-paper px-2 py-1 text-xs font-medium text-ink/60"
@@ -242,6 +252,13 @@ export function BulletinPostCard({
       )}
 
       {showPicker && <EmojiReactionPicker onPick={pickEmoji} onClose={() => setShowPicker(false)} />}
+      {showReactions && (
+        <ReactionsModal
+          reactions={post.reactions}
+          people={people}
+          onClose={() => setShowReactions(false)}
+        />
+      )}
     </Card>
   );
 }
