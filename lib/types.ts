@@ -103,7 +103,7 @@ export interface PhotoComment {
 }
 
 /** Extend as new mini-games are added. */
-export type GameType = "tap-tap" | "whack-a-mole" | "mole" | "guess-who";
+export type GameType = "tap-tap" | "whack-a-mole" | "mole" | "guess-who" | "ladder";
 export type GameRoomStatus = "lobby" | "active" | "finished";
 
 /** Shared shape for every mini-game room; `state` shape depends on gameType. */
@@ -183,6 +183,32 @@ export interface GuessWhoState {
   doneOrder: string[];
   /** Whoever's left once everyone else is done; null until the round ends. */
   loserId: string | null;
+  endedAt: Timestamp | null;
+}
+
+/** One horizontal connector between the column at `gapIndex` and the one right after it, at `row`. */
+export interface LadderRung {
+  row: number;
+  gapIndex: number;
+}
+
+/**
+ * 사다리게임 (ladder game / Amidakuji). Everyone sees the same generated
+ * ladder immediately; only each person's own path + outcome stays hidden
+ * until they tap their own "reveal" -- see lib/ladder.ts for path tracing.
+ */
+export interface LadderState {
+  /** One label per BOTTOM column position (0..players.length-1) -- fixed labels the paths land on, independent of who started where. */
+  outcomes: string[];
+  /** personId -> their starting (top) column index. Generated once at start, shared by everyone. */
+  playerColumns: Record<string, number>;
+  /** The rung layout, generated once by whoever starts the game -- never regenerated per-client. */
+  ladderStructure: LadderRung[];
+  /** How many rows tall the ladder is, stored alongside the rungs so every client renders an identical grid. */
+  rowCount: number;
+  /** personId -> whether they've tapped "reveal my result" yet. */
+  revealed: Record<string, boolean>;
+  startedAt: Timestamp | null;
   endedAt: Timestamp | null;
 }
 

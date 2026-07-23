@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import { useJoinableGame } from "@/components/games/useJoinableGame";
 import { GameCard } from "@/components/games/GameCard";
 import { lobbyGuessWhoState } from "@/lib/guessWho";
+import { lobbyLadderState } from "@/lib/ladder";
 import { lobbyMoleGameState } from "@/lib/moleGame";
 import { lobbyTapTapState } from "@/lib/tapTap";
 import { lobbyWhackItState } from "@/lib/whackIt";
-import type { GuessWhoState, MoleGameState, TapTapState, WhackItState } from "@/lib/types";
+import type { GuessWhoState, LadderState, MoleGameState, TapTapState, WhackItState } from "@/lib/types";
 
 export default function GamePage() {
   const router = useRouter();
@@ -30,6 +31,11 @@ export default function GamePage() {
     "guess-who",
     lobbyGuessWhoState,
     "forehead cards, no peeking",
+  );
+  const ladder = useJoinableGame<LadderState>(
+    "ladder",
+    lobbyLadderState,
+    "climb down, find your fate",
   );
 
   return (
@@ -61,6 +67,13 @@ export default function GamePage() {
         iconSrc="/games/guess-who.png"
         onClick={guessWho.onClick}
         players={guessWho.players}
+      />
+      <GameCard
+        title="사다리게임"
+        subtitle={ladder.subtitle}
+        emoji="🪜"
+        onClick={ladder.onClick}
+        players={ladder.players}
       />
       <GameCard
         title="Suika Game"

@@ -5,33 +5,40 @@ import { useRouter } from "next/navigation";
 import { usePeople } from "@/contexts/PersonContext";
 import { GUESS_WHO_MIN_PLAYERS, activeGuessWhoState } from "@/lib/guessWho";
 import { joinRoom, leaveLobbyRoom, listenRoom, startRoom } from "@/lib/gameRooms";
+import { LADDER_MIN_PLAYERS, activeLadderState } from "@/lib/ladder";
 import { MOLE_MIN_PLAYERS, activeMoleGameState } from "@/lib/moleGame";
 import { activeTapTapState } from "@/lib/tapTap";
 import { activeWhackItState } from "@/lib/whackIt";
 import type {
   GameRoom,
   GuessWhoState,
+  LadderState,
   MoleGameState,
   TapTapState,
   WhackItState,
 } from "@/lib/types";
 import { GuessWhoRoom } from "@/components/games/GuessWhoRoom";
+import { LadderOutcomeModal } from "@/components/games/ladder/LadderOutcomeModal";
+import { LadderRoom } from "@/components/games/ladder/LadderRoom";
 import { MoleRoom } from "@/components/games/MoleRoom";
 import { RoomLobby } from "@/components/games/RoomLobby";
 import { TapTapRoom } from "@/components/games/TapTapRoom";
 import { WhackItRoom } from "@/components/games/WhackItRoom";
 
-function startStateFor(gameType: string, players: string[]): unknown {
+/** `ladderOutcomes` is only ever passed for the ladder game -- every other game computes its active state with no extra input. */
+function startStateFor(gameType: string, players: string[], ladderOutcomes?: string[]): unknown {
   if (gameType === "tap-tap") return activeTapTapState();
   if (gameType === "whack-a-mole") return activeWhackItState();
   if (gameType === "mole") return activeMoleGameState(players);
   if (gameType === "guess-who") return activeGuessWhoState(players);
+  if (gameType === "ladder") return activeLadderState(players, ladderOutcomes ?? []);
   return {};
 }
 
 function minPlayersFor(gameType: string): number {
   if (gameType === "mole") return MOLE_MIN_PLAYERS;
   if (gameType === "guess-who") return GUESS_WHO_MIN_PLAYERS;
+  if (gameType === "ladder") return LADDER_MIN_PLAYERS;
   return 1;
 }
 
@@ -44,11 +51,12 @@ export default function GameRoomPage({
   const router = useRouter();
   const { people, activePersonId } = usePeople();
   const [room, setRoom] = useState<
-    | GameRoom<TapTapState | WhackItState | MoleGameState | GuessWhoState>
+    | GameRoom<TapTapState | WhackItState | MoleGameState | GuessWhoState | LadderState>
     | null
     | undefined
   >(undefined);
   const [starting, setStarting] = useState(false);
+  const [showLadderOutcomes, setShowLadderOutcomes] = useState(false);
   // Set synchronously the moment the player chooses to leave, so the
   // auto-join effect below doesn't see the leave's own optimistic local
   // snapshot update (players minus this person) and immediately re-add them
@@ -57,7 +65,7 @@ export default function GameRoomPage({
 
   useEffect(
     () =>
-      listenRoom<TapTapState | WhackItState | MoleGameState | GuessWhoState>(
+      listenRoom<TapTapState | WhackItState | MoleGameState | GuessWhoState | LadderState>(
         roomId,
         setRoom,
       ),
@@ -107,7 +115,8 @@ export default function GameRoomPage({
     room.gameType !== "tap-tap" &&
     room.gameType !== "whack-a-mole" &&
     room.gameType !== "mole" &&
-    room.gameType !== "guess-who"
+    room.gameType !== "guess-who" &&
+    room.gameType !== "ladder"
   ) {
     return (
       <div>
@@ -119,24 +128,41 @@ export default function GameRoomPage({
     );
   }
 
-  const handleStart = async () => {
+  const handleStart = async (ladderOutcomes?: string[]) => {
     setStarting(true);
-    await startRoom(room.id, startStateFor(room.gameType, room.players));
+    await startRoom(room.id, startStateFor(room.gameType, room.players, ladderOutcomes));
   };
+
+  const isLadder = room.gameType === "ladder";
+  const lobbyPlayers = room.players
+    .map((id) => people.find((p) => p.id === id))
+    .filter((p): p is (typeof people)[number] => !!p);
 
   return (
     <div>
       {backLink}
       {room.status === "lobby" ? (
-        <RoomLobby
-          players={room.players}
-          createdBy={room.createdBy}
-          activePersonId={activePersonId}
-          people={people}
-          onStart={handleStart}
-          starting={starting}
-          minPlayers={minPlayersFor(room.gameType)}
-        />
+        <>
+          <RoomLobby
+            players={room.players}
+            createdBy={room.createdBy}
+            activePersonId={activePersonId}
+            people={people}
+            onStart={isLadder ? () => setShowLadderOutcomes(true) : handleStart}
+            starting={starting}
+            minPlayers={minPlayersFor(room.gameType)}
+          />
+          {isLadder && showLadderOutcomes && (
+            <LadderOutcomeModal
+              players={lobbyPlayers}
+              onClose={() => setShowLadderOutcomes(false)}
+              onSubmit={(outcomes) => {
+                setShowLadderOutcomes(false);
+                void handleStart(outcomes);
+              }}
+            />
+          )}
+        </>
       ) : (
         activePersonId &&
         (room.gameType === "tap-tap" ? (
@@ -157,9 +183,15 @@ export default function GameRoomPage({
             people={people}
             activePersonId={activePersonId}
           />
-        ) : (
+        ) : room.gameType === "guess-who" ? (
           <GuessWhoRoom
             room={room as GameRoom<GuessWhoState>}
+            people={people}
+            activePersonId={activePersonId}
+          />
+        ) : (
+          <LadderRoom
+            room={room as GameRoom<LadderState>}
             people={people}
             activePersonId={activePersonId}
           />
