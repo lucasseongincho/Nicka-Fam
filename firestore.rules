@@ -82,6 +82,10 @@ service cloud.firestore {
     // gallery can never have one of its own fields hidden from readers.
     match /voteDesigns/{designId} {
       allow read, write: if true;
+
+      match /comments/{commentId} {
+        allow read, write: if true;
+      }
     }
 
     // Write-only bookkeeping: which person uploaded a given design. No read

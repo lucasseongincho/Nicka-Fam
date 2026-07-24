@@ -39,7 +39,7 @@ function rememberUpload(designId: string, uploaderId: string) {
 }
 
 export default function VotePage() {
-  const { activePersonId } = usePeople();
+  const { people, activePersonId } = usePeople();
   const [designs, setDesigns] = useState<VoteDesign[]>([]);
   const [session, setSession] = useState<VoteSession | null>(null);
   const [myVote, setMyVote] = useState<DesignVote | null>(null);
@@ -177,6 +177,8 @@ export default function VotePage() {
       {viewingDesign && (
         <DesignLightbox
           design={viewingDesign}
+          people={people}
+          activePersonId={activePersonId}
           isMyVote={myVote?.designId === viewingDesign.id}
           canVote={votingOpen}
           canRemove={

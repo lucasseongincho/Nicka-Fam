@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDocs,
   increment,
   onSnapshot,
   orderBy,
@@ -10,7 +11,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { DesignVote, VoteDesign, VoteSession } from "@/lib/types";
+import type { DesignComment, DesignVote, VoteDesign, VoteSession } from "@/lib/types";
 
 const SESSION_DOC_ID = "current";
 
@@ -78,6 +79,7 @@ export async function uploadVoteDesign(file: File, uploaderId: string) {
     imageUrl: url,
     publicId,
     voteCount: 0,
+    commentCount: 0,
     createdAt: serverTimestamp(),
   });
   batch.set(uploaderRef, { uploaderId });
@@ -87,9 +89,39 @@ export async function uploadVoteDesign(file: File, uploaderId: string) {
 }
 
 export async function deleteVoteDesign(designId: string) {
+  const commentsSnap = await getDocs(collection(db, "voteDesigns", designId, "comments"));
   const batch = writeBatch(db);
+  commentsSnap.docs.forEach((c) => batch.delete(c.ref));
   batch.delete(doc(db, "voteDesigns", designId));
   batch.delete(doc(db, "voteDesignUploaders", designId));
+  await batch.commit();
+}
+
+export function listenDesignComments(
+  designId: string,
+  callback: (comments: DesignComment[]) => void,
+) {
+  const q = query(
+    collection(db, "voteDesigns", designId, "comments"),
+    orderBy("createdAt", "asc"),
+  );
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as DesignComment));
+  });
+}
+
+export async function addDesignComment(designId: string, authorId: string, text: string) {
+  const batch = writeBatch(db);
+  const commentRef = doc(collection(db, "voteDesigns", designId, "comments"));
+  batch.set(commentRef, { authorId, text, createdAt: serverTimestamp() });
+  batch.update(doc(db, "voteDesigns", designId), { commentCount: increment(1) });
+  await batch.commit();
+}
+
+export async function deleteDesignComment(designId: string, commentId: string) {
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "voteDesigns", designId, "comments", commentId));
+  batch.update(doc(db, "voteDesigns", designId), { commentCount: increment(-1) });
   await batch.commit();
 }
 

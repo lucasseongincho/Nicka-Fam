@@ -301,6 +301,20 @@ export interface VoteDesign {
   publicId: string;
   /** Denormalized, kept in sync by castVote's batched increment/decrement. */
   voteCount: number;
+  /** Denormalized count of this design's comments subcollection. Absent on legacy docs -- treat as 0. */
+  commentCount?: number;
+  createdAt: Timestamp;
+}
+
+/**
+ * One reply, stored under voteDesigns/{designId}/comments. Unlike votes/
+ * uploads, comments are attributed -- authorId is shown, same as
+ * BulletinComment/PhotoComment.
+ */
+export interface DesignComment {
+  id: string;
+  authorId: string;
+  text: string;
   createdAt: Timestamp;
 }
 
