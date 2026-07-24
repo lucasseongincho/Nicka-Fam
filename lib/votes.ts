@@ -6,6 +6,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   writeBatch,
@@ -33,10 +34,28 @@ export function listenVoteSession(callback: (session: VoteSession | null) => voi
  * single-doc `get`, not a collection `list`, so this stays allowed under
  * rules that otherwise deny listing the votes collection. Never used to look
  * up anyone else's vote.
+ *
+ * Normalizes legacy docs written before multi-vote support, which stored a
+ * single `designId` string instead of a `designIds` array -- those carry
+ * over as a one-element array rather than disappearing.
  */
 export function listenMyVote(personId: string, callback: (vote: DesignVote | null) => void) {
   return onSnapshot(doc(db, "votes", personId), (snap) => {
-    callback(snap.exists() ? (snap.data() as DesignVote) : null);
+    if (!snap.exists()) {
+      callback(null);
+      return;
+    }
+    const data = snap.data() as {
+      voterId: string;
+      designId?: string;
+      designIds?: string[];
+      updatedAt: DesignVote["updatedAt"];
+    };
+    callback({
+      voterId: data.voterId,
+      designIds: data.designIds ?? (data.designId ? [data.designId] : []),
+      updatedAt: data.updatedAt,
+    });
   });
 }
 
@@ -126,31 +145,44 @@ export async function deleteDesignComment(designId: string, commentId: string) {
 }
 
 /**
- * Casts or switches a vote. `previousDesignId` must come from the caller's
- * already-subscribed listenMyVote state (not re-read here) -- votes/{personId}
- * is a single doc the caller already has live, so there's no need for a
- * second round-trip. Decrements the old design's count and increments the
- * new one in the same batch as the vote doc write, so a design's tally and
- * the set of who's-voted-for-what never drift apart.
+ * Toggles one person's vote for one design -- a person can vote for as many
+ * designs as they like, independently. Runs as a transaction (rather than a
+ * blind arrayUnion/arrayRemove batch) because it must also migrate legacy
+ * docs written before multi-vote support, which stored a single `designId`
+ * string instead of a `designIds` array: arrayUnion on the `designIds` field
+ * alone would silently leave that old field behind, un-migrated, the moment
+ * someone toggled a second design -- their original vote would still count
+ * toward its design's tally but stop showing as "your vote" on their own
+ * client. Reading the doc first and overwriting it whole (not merging) fixes
+ * that in place instead of just papering over it on read.
  */
-export async function castVote(
+export async function toggleVote(
   designId: string,
   personId: string,
-  previousDesignId: string | null,
+  isCurrentlyVoted: boolean,
 ) {
-  if (previousDesignId === designId) return;
+  await runTransaction(db, async (tx) => {
+    const voteRef = doc(db, "votes", personId);
+    const voteSnap = await tx.get(voteRef);
+    const data = voteSnap.exists()
+      ? (voteSnap.data() as { designId?: string; designIds?: string[] })
+      : undefined;
+    const currentIds = new Set(data?.designIds ?? (data?.designId ? [data.designId] : []));
+    if (isCurrentlyVoted) {
+      currentIds.delete(designId);
+    } else {
+      currentIds.add(designId);
+    }
 
-  const batch = writeBatch(db);
-  if (previousDesignId) {
-    batch.update(doc(db, "voteDesigns", previousDesignId), { voteCount: increment(-1) });
-  }
-  batch.update(doc(db, "voteDesigns", designId), { voteCount: increment(1) });
-  batch.set(doc(db, "votes", personId), {
-    voterId: personId,
-    designId,
-    updatedAt: serverTimestamp(),
+    tx.set(voteRef, {
+      voterId: personId,
+      designIds: Array.from(currentIds),
+      updatedAt: serverTimestamp(),
+    });
+    tx.update(doc(db, "voteDesigns", designId), {
+      voteCount: increment(isCurrentlyVoted ? -1 : 1),
+    });
   });
-  await batch.commit();
 }
 
 export async function setVotingOpen(open: boolean) {

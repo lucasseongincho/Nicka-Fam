@@ -19,9 +19,9 @@ export function DesignLightbox({
   activePersonId,
   isMyVote,
   canVote,
-  canRemove,
-  onVote,
-  onRemove,
+  canRemoveDesign,
+  onToggleVote,
+  onRemoveDesign,
   onClose,
 }: {
   design: VoteDesign;
@@ -29,9 +29,9 @@ export function DesignLightbox({
   activePersonId: string;
   isMyVote: boolean;
   canVote: boolean;
-  canRemove: boolean;
-  onVote: () => void;
-  onRemove: () => void;
+  canRemoveDesign: boolean;
+  onToggleVote: () => void;
+  onRemoveDesign: () => void;
   onClose: () => void;
 }) {
   const [showComments, setShowComments] = useState(false);
@@ -70,15 +70,22 @@ export function DesignLightbox({
         </span>
         {isMyVote && (
           <span className="rounded-chip border-2 border-ink bg-orange/15 px-2.5 py-1 text-xs font-semibold text-orange-dark">
-            ✓ your pick
+            ✓ your vote
           </span>
         )}
       </div>
 
       <div className="mb-4 flex flex-col gap-2.5">
-        {canVote && !isMyVote && <Button onClick={onVote}>vote for this design</Button>}
-        {canRemove && (
-          <Button variant="ghost" className="text-orange-dark" onClick={onRemove}>
+        {canVote &&
+          (isMyVote ? (
+            <Button variant="ghost" className="text-orange-dark" onClick={onToggleVote}>
+              remove my vote
+            </Button>
+          ) : (
+            <Button onClick={onToggleVote}>vote for this design</Button>
+          ))}
+        {canRemoveDesign && (
+          <Button variant="ghost" className="text-orange-dark" onClick={onRemoveDesign}>
             remove my design
           </Button>
         )}

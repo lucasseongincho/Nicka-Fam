@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { usePeople } from "@/contexts/PersonContext";
 import {
-  castVote,
   deleteVoteDesign,
   listenMyVote,
   listenVoteDesigns,
   listenVoteSession,
   setVotingOpen,
+  toggleVote,
 } from "@/lib/votes";
 import type { DesignVote, VoteDesign, VoteSession } from "@/lib/types";
 import { Mascot } from "@/components/ui/Mascot";
@@ -68,13 +68,14 @@ export default function VotePage() {
 
   const votingOpen = session?.open ?? true;
 
-  const vote = async (design: VoteDesign) => {
+  const toggleMyVote = async (design: VoteDesign) => {
     if (!votingOpen) return;
-    await castVote(design.id, activePersonId, myVote?.designId ?? null);
+    const isCurrentlyVoted = myVote?.designIds.includes(design.id) ?? false;
+    await toggleVote(design.id, activePersonId, isCurrentlyVoted);
     setViewingDesignId(null);
   };
 
-  const remove = async (design: VoteDesign) => {
+  const removeDesign = async (design: VoteDesign) => {
     await deleteVoteDesign(design.id);
     const uploads = { ...myUploads };
     delete uploads[design.id];
@@ -146,9 +147,7 @@ export default function VotePage() {
 
       <p className="mb-3.5 text-sm text-ink/55">
         {votingOpen
-          ? myVote
-            ? "tap a design to see it full-size or change your vote."
-            : "tap a design to see it full-size and vote."
+          ? "tap a design to see it full-size and vote — you can vote for more than one."
           : "voting's closed — here's how it landed."}
       </p>
 
@@ -157,7 +156,7 @@ export default function VotePage() {
           <DesignCard
             key={design.id}
             design={design}
-            isMyVote={myVote?.designId === design.id}
+            isMyVote={myVote?.designIds.includes(design.id) ?? false}
             onOpen={() => setViewingDesignId(design.id)}
           />
         ))}
@@ -179,15 +178,15 @@ export default function VotePage() {
           design={viewingDesign}
           people={people}
           activePersonId={activePersonId}
-          isMyVote={myVote?.designId === viewingDesign.id}
+          isMyVote={myVote?.designIds.includes(viewingDesign.id) ?? false}
           canVote={votingOpen}
-          canRemove={
+          canRemoveDesign={
             votingOpen &&
             viewingDesign.voteCount === 0 &&
             myUploads[viewingDesign.id] === activePersonId
           }
-          onVote={() => void vote(viewingDesign)}
-          onRemove={() => void remove(viewingDesign)}
+          onToggleVote={() => void toggleMyVote(viewingDesign)}
+          onRemoveDesign={() => void removeDesign(viewingDesign)}
           onClose={() => setViewingDesignId(null)}
         />
       )}

@@ -319,14 +319,16 @@ export interface DesignComment {
 }
 
 /**
- * One doc per person, keyed by personId, in `votes`. Firestore rules allow
- * `get` (so a person can read back their own vote by their own known ID,
- * live, cross-device) but deny `list` entirely -- no query anywhere can ever
- * enumerate who voted for what, which is the actual anonymity guarantee.
+ * One doc per person, keyed by personId, in `votes`. A person may vote for
+ * several designs at once -- designIds is a set, toggled per-design via
+ * arrayUnion/arrayRemove. Firestore rules allow `get` (so a person can read
+ * back their own votes by their own known ID, live, cross-device) but deny
+ * `list` entirely -- no query anywhere can ever enumerate who voted for what,
+ * which is the actual anonymity guarantee.
  */
 export interface DesignVote {
   voterId: string;
-  designId: string;
+  designIds: string[];
   updatedAt: Timestamp;
 }
 
