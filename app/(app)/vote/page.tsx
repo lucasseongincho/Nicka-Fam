@@ -14,6 +14,7 @@ import type { DesignVote, VoteDesign, VoteSession } from "@/lib/types";
 import { Mascot } from "@/components/ui/Mascot";
 import { Button } from "@/components/ui/Button";
 import { DesignCard } from "@/components/vote/DesignCard";
+import { DesignLightbox } from "@/components/vote/DesignLightbox";
 import { UploadDesignModal } from "@/components/vote/UploadDesignModal";
 
 const UPLOADS_STORAGE_KEY = "nickafam_vote_uploads";
@@ -44,6 +45,7 @@ export default function VotePage() {
   const [myVote, setMyVote] = useState<DesignVote | null>(null);
   const [myUploads, setMyUploads] = useState<Record<string, string>>({});
   const [showUpload, setShowUpload] = useState(false);
+  const [viewingDesignId, setViewingDesignId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -69,6 +71,7 @@ export default function VotePage() {
   const vote = async (design: VoteDesign) => {
     if (!votingOpen) return;
     await castVote(design.id, activePersonId, myVote?.designId ?? null);
+    setViewingDesignId(null);
   };
 
   const remove = async (design: VoteDesign) => {
@@ -77,7 +80,12 @@ export default function VotePage() {
     delete uploads[design.id];
     localStorage.setItem(UPLOADS_STORAGE_KEY, JSON.stringify(uploads));
     setMyUploads(uploads);
+    setViewingDesignId(null);
   };
+
+  // Re-derived from the live `designs` list (not stored as its own object) so
+  // the lightbox's vote count/your-pick state stays live while it's open.
+  const viewingDesign = designs.find((d) => d.id === viewingDesignId) ?? null;
 
   if (designs.length === 0) {
     return (
@@ -139,8 +147,8 @@ export default function VotePage() {
       <p className="mb-3.5 text-sm text-ink/55">
         {votingOpen
           ? myVote
-            ? "tap another design to change your vote."
-            : "tap a design to cast your vote."
+            ? "tap a design to see it full-size or change your vote."
+            : "tap a design to see it full-size and vote."
           : "voting's closed — here's how it landed."}
       </p>
 
@@ -150,14 +158,7 @@ export default function VotePage() {
             key={design.id}
             design={design}
             isMyVote={myVote?.designId === design.id}
-            canVote={votingOpen}
-            canRemove={
-              votingOpen &&
-              design.voteCount === 0 &&
-              myUploads[design.id] === activePersonId
-            }
-            onVote={() => void vote(design)}
-            onRemove={() => void remove(design)}
+            onOpen={() => setViewingDesignId(design.id)}
           />
         ))}
       </div>
@@ -170,6 +171,22 @@ export default function VotePage() {
             rememberUpload(designId, activePersonId);
             setMyUploads(readMyUploads());
           }}
+        />
+      )}
+
+      {viewingDesign && (
+        <DesignLightbox
+          design={viewingDesign}
+          isMyVote={myVote?.designId === viewingDesign.id}
+          canVote={votingOpen}
+          canRemove={
+            votingOpen &&
+            viewingDesign.voteCount === 0 &&
+            myUploads[viewingDesign.id] === activePersonId
+          }
+          onVote={() => void vote(viewingDesign)}
+          onRemove={() => void remove(viewingDesign)}
+          onClose={() => setViewingDesignId(null)}
         />
       )}
     </div>
