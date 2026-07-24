@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const TABS = ["split", "calendar", "photos", "game", "board"] as const;
+const TABS = ["split", "calendar", "photos", "game", "board", "vote"] as const;
 
 function TabIcon({ tab, active }: { tab: (typeof TABS)[number]; active: boolean }) {
   const activeColor = "#EA5A32";
@@ -58,6 +58,35 @@ function TabIcon({ tab, active }: { tab: (typeof TABS)[number]; active: boolean 
         <div
           className="absolute -top-[3px] left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full"
           style={{ background: borderColor }}
+        />
+      </div>
+    );
+  }
+
+  if (tab === "vote") {
+    return (
+      <div className="relative h-[22px] w-[22px] rounded-md border-2" style={{ borderColor }}>
+        <div
+          className="absolute rounded-sm"
+          style={{
+            background: borderColor,
+            width: 2.5,
+            height: 6,
+            top: 9,
+            left: 6,
+            transform: "rotate(45deg)",
+          }}
+        />
+        <div
+          className="absolute rounded-sm"
+          style={{
+            background: borderColor,
+            width: 2.5,
+            height: 10,
+            top: 5,
+            left: 11,
+            transform: "rotate(-45deg)",
+          }}
         />
       </div>
     );

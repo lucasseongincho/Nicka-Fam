@@ -75,5 +75,41 @@ service cloud.firestore {
     match /clockSync/{docId} {
       allow read, write: if true;
     }
+
+    // T-shirt design vote gallery. Public: image + denormalized voteCount
+    // only -- no uploader identity lives on this doc at all (see
+    // voteDesignUploaders below), since a doc that must be listable for the
+    // gallery can never have one of its own fields hidden from readers.
+    match /voteDesigns/{designId} {
+      allow read, write: if true;
+    }
+
+    // Write-only bookkeeping: which person uploaded a given design. No read
+    // path whatsoever (not even single-doc `get`) -- this is intentionally
+    // unreadable by any client, for potential future moderation only.
+    match /voteDesignUploaders/{designId} {
+      allow read: if false;
+      allow create: if true;
+      allow update, delete: if false;
+    }
+
+    // One vote per person, keyed by personId so switching a vote overwrites
+    // this same doc instead of creating a duplicate. `get` is allowed (a
+    // person can read back their OWN vote by their own known ID, live and
+    // cross-device -- doc IDs are just personIds, already public via
+    // /people, so this adds no real exposure) but `list` is denied, so no
+    // query anywhere can ever enumerate who voted for what.
+    match /votes/{personId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if true;
+      allow delete: if false;
+    }
+
+    // Single shared flag: is the t-shirt design vote open or closed. Any
+    // group member can flip it -- no fixed host for this feature.
+    match /voteSession/{sessionId} {
+      allow read, write: if true;
+    }
   }
 }

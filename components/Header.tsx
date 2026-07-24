@@ -11,6 +11,7 @@ const META: Record<string, { title: string; sub: string }> = {
   "/photos": { title: "the goods", sub: "the shared shame folder" },
   "/game": { title: "game", sub: "pick your chaos" },
   "/board": { title: "board", sub: "pin your thoughts" },
+  "/vote": { title: "vote", sub: "pick the shirt" },
 };
 
 export function Header() {

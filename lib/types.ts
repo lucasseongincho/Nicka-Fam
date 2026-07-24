@@ -286,3 +286,38 @@ export interface BulletinComment {
   text: string;
   createdAt: Timestamp;
 }
+
+/**
+ * T-shirt design vote submission -- one doc per uploaded design in
+ * `voteDesigns`. Deliberately holds no uploader identity: that lives
+ * write-only in `voteDesignUploaders/{designId}` (see lib/votes.ts) so it can
+ * never be listed/read back to any client, even though this doc itself is
+ * fully public (the gallery needs to list every design).
+ */
+export interface VoteDesign {
+  id: string;
+  imageUrl: string;
+  /** Cloudinary public_id, kept for reference (deletion isn't wired up) */
+  publicId: string;
+  /** Denormalized, kept in sync by castVote's batched increment/decrement. */
+  voteCount: number;
+  createdAt: Timestamp;
+}
+
+/**
+ * One doc per person, keyed by personId, in `votes`. Firestore rules allow
+ * `get` (so a person can read back their own vote by their own known ID,
+ * live, cross-device) but deny `list` entirely -- no query anywhere can ever
+ * enumerate who voted for what, which is the actual anonymity guarantee.
+ */
+export interface DesignVote {
+  voterId: string;
+  designId: string;
+  updatedAt: Timestamp;
+}
+
+/** Single shared flag doc at voteSession/current. Absent doc == open (voting hasn't been explicitly closed yet). */
+export interface VoteSession {
+  open: boolean;
+  updatedAt: Timestamp;
+}
