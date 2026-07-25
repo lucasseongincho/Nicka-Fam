@@ -7,6 +7,7 @@ import { Header } from "@/components/Header";
 import { AvatarStrip } from "@/components/AvatarStrip";
 import { SwitchPersonControl } from "@/components/SwitchPersonControl";
 import { TabBar } from "@/components/TabBar";
+import { SetlogPromptWatcher } from "@/components/setlog/SetlogPromptWatcher";
 
 export default function AppShellLayout({
   children,
@@ -30,6 +31,7 @@ export default function AppShellLayout({
       <AvatarStrip />
       <SwitchPersonControl />
       <main className="flex-1 overflow-y-auto px-5 pb-5 pt-1">{children}</main>
+      <SetlogPromptWatcher />
       <TabBar />
     </div>
   );

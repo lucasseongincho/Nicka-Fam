@@ -8,6 +8,7 @@ export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
   board: true,
   leaderboards: true,
   bills: true,
+  setlog: true,
 };
 
 /**

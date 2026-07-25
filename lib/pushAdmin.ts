@@ -17,7 +17,7 @@ import type { NotifyCategory } from "@/lib/notifyClient";
  * ever runs inside Vercel's own API routes, using a service account
  * generated from Firebase Console -> Project Settings -> Service Accounts.
  */
-function adminApp() {
+export function adminApp() {
   if (getApps().length) return getApps()[0];
 
   const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;

@@ -7,6 +7,7 @@ export interface NotificationPrefs {
   board: boolean;
   leaderboards: boolean;
   bills: boolean;
+  setlog: boolean;
 }
 
 export interface Person {
@@ -336,4 +337,77 @@ export interface DesignVote {
 export interface VoteSession {
   open: boolean;
   updatedAt: Timestamp;
+}
+
+/**
+ * One randomly-scheduled capture prompt within a Setlog day. `id` is a
+ * short slug ("s0", "s1", ...) stable for the whole day -- it's what
+ * SetlogClip.slotId and SetlogDay's per-slot metadata key off of.
+ * `notifiedAt` is set (by the tick route, server-side) the moment the push
+ * for this slot actually goes out, so a retried/overlapping tick never
+ * double-sends the same slot's notification.
+ */
+export interface SetlogSlot {
+  id: string;
+  scheduledAt: Timestamp;
+  notifiedAt: Timestamp | null;
+}
+
+/**
+ * One doc per day in `setlogPrompts`, keyed by ET calendar date
+ * ("2026-07-24"). Generated once (lazily, by whichever tick first sees the
+ * day) with 3-5 random times inside the active-hours window; never
+ * regenerated after that first write.
+ */
+export interface SetlogPromptsDay {
+  date: string;
+  timezone: string;
+  activeHoursStart: number;
+  activeHoursEnd: number;
+  slots: SetlogSlot[];
+  createdAt: Timestamp;
+}
+
+/**
+ * One doc per submitted raw clip in `setlogClips`. `date` + `slotId`
+ * together are the "promptId" the spec describes -- kept as two plain
+ * fields instead of one composite string so the day merge can do a single
+ * `where("date", "==", ...)` read and group by slotId in memory, without
+ * needing a composite Firestore index.
+ */
+export interface SetlogClip {
+  id: string;
+  personId: string;
+  date: string;
+  slotId: string;
+  videoUrl: string;
+  /** Cloudinary public_id, kept for reference (deletion isn't wired up -- raw clips are kept after merge, see lib/setlogAdmin.ts) */
+  publicId: string;
+  createdAt: Timestamp;
+}
+
+export type SetlogDayStatus = "merging" | "ready" | "no_clips" | "error";
+
+/** One slot's outcome once a day has finished merging: who's in the merged segment, and who missed it entirely. */
+export interface SetlogDaySlot {
+  id: string;
+  scheduledAt: Timestamp;
+  /** personIds in the order their clips appear in the merged segment for this slot. */
+  participantIds: string[];
+  missedIds: string[];
+}
+
+/**
+ * One doc per day in `setlogDays`, keyed by the same ET calendar date as
+ * its setlogPrompts doc. Written once, by the merge step in
+ * lib/setlogAdmin.ts, after every slot's 8-minute window has closed.
+ */
+export interface SetlogDay {
+  date: string;
+  status: SetlogDayStatus;
+  mergedVideoUrl: string | null;
+  /** Cloudinary public_id for the merged video, kept for reference. */
+  mergedPublicId: string | null;
+  slots: SetlogDaySlot[];
+  mergedAt: Timestamp | null;
 }

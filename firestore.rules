@@ -115,5 +115,27 @@ service cloud.firestore {
     match /voteSession/{sessionId} {
       allow read, write: if true;
     }
+
+    // One doc per day, keyed by ET calendar date -- that day's randomly
+    // generated capture-prompt times. Written by the server-side tick
+    // route (via firebase-admin, which bypasses these rules entirely), but
+    // left readable/writable here for the same no-auth trust reasons as
+    // every other collection in this app.
+    match /setlogPrompts/{date} {
+      allow read, write: if true;
+    }
+
+    // One doc per submitted raw clip. date + slotId together are the
+    // "promptId" the feature spec describes.
+    match /setlogClips/{clipId} {
+      allow read, write: if true;
+    }
+
+    // One doc per day, keyed by the same ET calendar date as its
+    // setlogPrompts doc -- the merged video plus per-slot participant/missed
+    // lists. Written by the merge step in lib/setlogAdmin.ts.
+    match /setlogDays/{date} {
+      allow read, write: if true;
+    }
   }
 }
