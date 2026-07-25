@@ -104,7 +104,7 @@ export interface PhotoComment {
 }
 
 /** Extend as new mini-games are added. */
-export type GameType = "tap-tap" | "whack-a-mole" | "mole" | "guess-who" | "ladder";
+export type GameType = "tap-tap" | "whack-a-mole" | "mole" | "guess-who" | "ladder" | "snake";
 export type GameRoomStatus = "lobby" | "active" | "finished";
 
 /** Shared shape for every mini-game room; `state` shape depends on gameType. */
@@ -209,6 +209,21 @@ export interface LadderState {
   rowCount: number;
   /** personId -> whether they've tapped "reveal my result" yet. */
   revealed: Record<string, boolean>;
+  startedAt: Timestamp | null;
+  endedAt: Timestamp | null;
+}
+
+/**
+ * 지렁이게임 (Slither.io-style multiplayer snake). Unlike every other game
+ * room, almost none of the live gameplay lives here -- position/movement,
+ * orbs, and scores sync at high frequency through Realtime Database (see
+ * lib/snakeRtdb.ts) instead of Firestore, which isn't suited to that write
+ * volume. This Firestore state only anchors when the match went active;
+ * `endedAt` is unused in practice (the room is deleted once every human
+ * leaves, see leaveActiveRoom in lib/gameRooms.ts) but kept for the same
+ * shared-shape convention every other game's state follows.
+ */
+export interface SnakeState {
   startedAt: Timestamp | null;
   endedAt: Timestamp | null;
 }

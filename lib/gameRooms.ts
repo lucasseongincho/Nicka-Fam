@@ -110,6 +110,29 @@ export async function leaveLobbyRoom(
   });
 }
 
+/**
+ * Removes a player from a room mid-game -- for continuous games like Snake
+ * that don't have a fixed round end, unlike leaveLobbyRoom this is valid
+ * regardless of room status. Same promote-next-host-or-delete-if-empty
+ * behavior as leaveLobbyRoom.
+ */
+export async function leaveActiveRoom(
+  roomId: string,
+  personId: string,
+  players: string[],
+  createdBy: string,
+) {
+  const remaining = players.filter((id) => id !== personId);
+  if (remaining.length === 0) {
+    await deleteDoc(doc(db, ROOMS_COLLECTION, roomId));
+    return;
+  }
+  await updateDoc(doc(db, ROOMS_COLLECTION, roomId), {
+    players: arrayRemove(personId),
+    createdBy: createdBy === personId ? remaining[0] : createdBy,
+  });
+}
+
 /** Moves a lobby into its playing phase with the game's own fresh state (e.g. a start timestamp). */
 export async function startRoom(roomId: string, activeState: unknown) {
   await updateDoc(doc(db, ROOMS_COLLECTION, roomId), {

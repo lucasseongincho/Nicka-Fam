@@ -6,9 +6,17 @@ import { GameCard } from "@/components/games/GameCard";
 import { lobbyGuessWhoState } from "@/lib/guessWho";
 import { lobbyLadderState } from "@/lib/ladder";
 import { lobbyMoleGameState } from "@/lib/moleGame";
+import { lobbySnakeState } from "@/lib/snake";
 import { lobbyTapTapState } from "@/lib/tapTap";
 import { lobbyWhackItState } from "@/lib/whackIt";
-import type { GuessWhoState, LadderState, MoleGameState, TapTapState, WhackItState } from "@/lib/types";
+import type {
+  GuessWhoState,
+  LadderState,
+  MoleGameState,
+  SnakeState,
+  TapTapState,
+  WhackItState,
+} from "@/lib/types";
 
 export default function GamePage() {
   const router = useRouter();
@@ -36,6 +44,11 @@ export default function GamePage() {
     "ladder",
     lobbyLadderState,
     "climb down, find your fate",
+  );
+  const snake = useJoinableGame<SnakeState>(
+    "snake",
+    lobbySnakeState,
+    "eat, grow, don't touch yourself... or others",
   );
 
   return (
@@ -74,6 +87,13 @@ export default function GamePage() {
         emoji="🪜"
         onClick={ladder.onClick}
         players={ladder.players}
+      />
+      <GameCard
+        title="지렁이게임"
+        subtitle={snake.subtitle}
+        emoji="🐍"
+        onClick={snake.onClick}
+        players={snake.players}
       />
       <GameCard
         title="Suika Game"
