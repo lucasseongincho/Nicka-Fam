@@ -61,8 +61,12 @@ async function uploadClipToCloudinary(blob: Blob): Promise<{ url: string; public
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
+  // Filename extension is cosmetic (Cloudinary sniffs real content), but
+  // matching the blob's actual recorded format (mp4 on Safari, webm
+  // elsewhere) avoids any ambiguity.
+  const ext = blob.type.includes("mp4") ? "mp4" : "webm";
   const body = new FormData();
-  body.append("file", blob, "clip.webm");
+  body.append("file", blob, `clip.${ext}`);
   body.append("upload_preset", uploadPreset!);
 
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {

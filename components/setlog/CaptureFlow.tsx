@@ -125,7 +125,18 @@ export function CaptureFlow({
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
     recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: mimeType || "video/webm" });
+      // recorder.mimeType reflects whatever format the browser *actually*
+      // used -- on Safari/iOS none of MIME_CANDIDATES' codec-qualified
+      // strings are ever reported as supported (Safari is picky about the
+      // exact codec string), so pickMimeType() returns "" and Safari falls
+      // back to its own default recording format. Labeling the resulting
+      // Blob with a hardcoded "video/webm" in that case was the bug --
+      // Safari's actual output is real, playable video, just not webm, and
+      // a mislabeled Blob fails to decode anywhere, including its own
+      // preview here.
+      const blob = new Blob(chunksRef.current, {
+        type: recorder.mimeType || mimeType || "video/webm",
+      });
       setRecordedBlob(blob);
       setPreviewUrl(URL.createObjectURL(blob));
       stopStream();
