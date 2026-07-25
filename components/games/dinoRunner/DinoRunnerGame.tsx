@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { usePeople } from "@/contexts/PersonContext";
 import { notifyCategory } from "@/lib/notifyClient";
 import { submitDinoRunnerScore } from "@/lib/dinoRunnerScores";
+import { Button } from "@/components/ui/Button";
 import { DinoRunnerResult } from "./DinoRunnerResult";
 
 // The canvas drives its own rAF loop and reads window/Image directly, so it
@@ -30,6 +31,7 @@ type RunResult = {
 
 export function DinoRunnerGame() {
   const { people, loading, activePersonId, activePerson } = usePeople();
+  const [started, setStarted] = useState(false);
   const [runKey, setRunKey] = useState(0);
   const [score, setScore] = useState(0);
   const [result, setResult] = useState<RunResult | null>(null);
@@ -150,23 +152,35 @@ export function DinoRunnerGame() {
       </div>
 
       <div className="dino-play-area flex w-full flex-col items-center gap-3">
-        <div className="flex w-full max-w-[640px] items-center justify-between px-1">
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-ink/40">score</p>
-            <p className="font-heading text-2xl font-bold text-ink">{score}</p>
+        {started ? (
+          <>
+            <div className="flex w-full max-w-[640px] items-center justify-between px-1">
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-ink/40">score</p>
+                <p className="font-heading text-2xl font-bold text-ink">{score}</p>
+              </div>
+            </div>
+            <DinoRunnerCanvas
+              key={runKey}
+              personImages={personImages}
+              activePersonId={activePersonId}
+              otherPersonIds={otherPersonIds}
+              onScoreChange={setScore}
+              onGameOver={handleGameOver}
+            />
+            <p className="dino-hide-in-fullscreen text-center text-[11px] text-ink/40">
+              tap left to jump, right to duck &middot; or ↑/space to jump, ↓ to duck
+            </p>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-4 py-16 text-center">
+            <p className="font-heading text-lg font-semibold text-ink">ready to run?</p>
+            <p className="max-w-[240px] text-[13px] text-ink/50">
+              tap left to jump, right to duck &middot; or ↑/space to jump, ↓ to duck
+            </p>
+            <Button onClick={() => setStarted(true)}>start</Button>
           </div>
-        </div>
-        <DinoRunnerCanvas
-          key={runKey}
-          personImages={personImages}
-          activePersonId={activePersonId}
-          otherPersonIds={otherPersonIds}
-          onScoreChange={setScore}
-          onGameOver={handleGameOver}
-        />
-        <p className="dino-hide-in-fullscreen text-center text-[11px] text-ink/40">
-          tap left to jump, right to duck &middot; or ↑/space to jump, ↓ to duck
-        </p>
+        )}
       </div>
     </>
   );
