@@ -515,32 +515,26 @@ export function useSnakeEngine({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately keyed only on roomId/personId; isHost/people/name/photo are read live via refs (see effects above) so a prop change never re-joins the match mid-run.
   }, [roomId, personId]);
 
-  const setPointerFromClient = (canvas: HTMLCanvasElement, clientX: number, clientY: number) => {
-    const rect = canvas.getBoundingClientRect();
-    pointerRef.current.dx = clientX - rect.left - rect.width / 2;
-    pointerRef.current.dy = clientY - rect.top - rect.height / 2;
-  };
-
-  const pointerHandlers = {
-    onPointerDown: (e: React.PointerEvent<HTMLCanvasElement>) => {
-      pointerRef.current.active = true;
-      setPointerFromClient(e.currentTarget, e.clientX, e.clientY);
-    },
-    onPointerMove: (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!pointerRef.current.active) return;
-      setPointerFromClient(e.currentTarget, e.clientX, e.clientY);
-    },
-    onPointerUp: () => {
+  /**
+   * Driven by the on-screen Joystick, not the canvas itself -- passing a
+   * vector sets the target heading (only its angle matters, magnitude is
+   * just how far the knob's been dragged); passing null means "released",
+   * which keeps the snake going straight in its last heading, same as
+   * releasing a drag used to.
+   */
+  const setSteering = (vector: { dx: number; dy: number } | null) => {
+    if (vector === null) {
       pointerRef.current.active = false;
-    },
-    onPointerCancel: () => {
-      pointerRef.current.active = false;
-    },
+      return;
+    }
+    pointerRef.current.active = true;
+    pointerRef.current.dx = vector.dx;
+    pointerRef.current.dy = vector.dy;
   };
 
   const setBoosting = (boosting: boolean) => {
     localRef.current.boosting = boosting;
   };
 
-  return { alive, respawnRemainingMs, score, leaderboard, pointerHandlers, setBoosting };
+  return { alive, respawnRemainingMs, score, leaderboard, setSteering, setBoosting };
 }
