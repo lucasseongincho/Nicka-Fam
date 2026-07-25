@@ -1,6 +1,6 @@
 type MascotProps = {
   size?: number;
-  color?: "orange" | "teal";
+  color?: "orange" | "teal" | "blue" | "pink" | "green" | "yellow";
   mouth?: boolean;
   className?: string;
 };
@@ -8,6 +8,10 @@ type MascotProps = {
 const colorMap = {
   orange: "var(--color-orange)",
   teal: "var(--color-teal)",
+  blue: "#4C6FA8",
+  pink: "#B25FA0",
+  green: "#5FA06B",
+  yellow: "#D9A441",
 };
 
 export function Mascot({

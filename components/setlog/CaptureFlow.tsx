@@ -3,10 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { notifyCategory } from "@/lib/notifyClient";
 import { submitSetlogClip } from "@/lib/setlog";
+import { formatHourLabel } from "@/lib/setlogTime";
 
 const CLIP_DURATION_MS = 4000;
 const MAX_RETAKES = 1;
+const CAPTION_MAX_LENGTH = 140;
 
 const MIME_CANDIDATES = [
   "video/mp4;codecs=h264,aac",
@@ -20,25 +23,28 @@ function pickMimeType(): string {
   return MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t)) ?? "";
 }
 
-type Phase = "camera" | "recording" | "preview" | "uploading" | "error";
+type Phase = "camera" | "recording" | "preview" | "caption" | "uploading" | "error";
 
 /**
  * Full capture experience for one Setlog slot: live camera preview with a
- * front/back toggle, a fixed 4-second recording, one optional retake, then
- * upload. No filters/trimming/editing anywhere in this flow -- matches the
- * raw/unedited spirit the feature is going for.
+ * front/back toggle, a fixed 4-second recording, one optional retake, an
+ * optional caption prompt, then upload. No filters/trimming/editing
+ * anywhere in this flow -- matches the raw/unedited spirit the feature is
+ * going for.
  */
 export function CaptureFlow({
   personId,
-  date,
+  personName,
   slotId,
+  slotHour,
   remainingLabel,
   isWindowOpen,
   onDone,
 }: {
   personId: string;
-  date: string;
+  personName: string;
   slotId: string;
+  slotHour: number;
   remainingLabel: string;
   isWindowOpen: boolean;
   onDone: () => void;
@@ -55,6 +61,7 @@ export function CaptureFlow({
   const [retakes, setRetakes] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [caption, setCaption] = useState("");
   const [countIn, setCountIn] = useState(4);
 
   const stopStream = () => {
@@ -92,7 +99,7 @@ export function CaptureFlow({
     };
   }, [phase, facingMode]);
 
-  // Close automatically if the 8-minute window runs out mid-flow -- no late
+  // Close automatically if the slot's window runs out mid-flow -- no late
   // submissions, so there's nothing useful left for the person to do here.
   useEffect(() => {
     if (!isWindowOpen && phase !== "uploading") onDone();
@@ -145,15 +152,22 @@ export function CaptureFlow({
     setPhase("camera");
   };
 
-  const submit = async () => {
+  const post = async () => {
     if (!recordedBlob) return;
     setPhase("uploading");
     try {
-      await submitSetlogClip(recordedBlob, personId, date, slotId);
+      await submitSetlogClip(recordedBlob, caption, personId, slotId);
+      void notifyCategory({
+        category: "setlog",
+        actorId: personId,
+        title: "setlog",
+        body: `${personName} posted their ${formatHourLabel(slotHour)} Setlog`,
+        url: "/setlog",
+      });
       onDone();
     } catch {
       setError("upload failed — check your connection and try again.");
-      setPhase("preview");
+      setPhase("caption");
     }
   };
 
@@ -215,20 +229,48 @@ export function CaptureFlow({
           <video
             src={previewUrl}
             autoPlay
+            muted
             loop
             playsInline
             controls
             className="mb-3 aspect-[9/16] w-full rounded-card-sm border-2 border-ink object-cover"
           />
-          {error && <p className="mb-2 text-center text-sm text-orange-dark">{error}</p>}
           <div className="flex gap-3">
             {retakes < MAX_RETAKES && (
               <Button variant="ghost" className="flex-1" onClick={retake}>
                 retake
               </Button>
             )}
-            <Button className="flex-1" onClick={submit}>
+            <Button className="flex-1" onClick={() => setPhase("caption")}>
               use this
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {phase === "caption" && previewUrl && (
+        <div>
+          <video
+            src={previewUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="mb-3 aspect-[9/16] w-full rounded-card-sm border-2 border-ink object-cover"
+          />
+          <input
+            value={caption}
+            onChange={(e) => setCaption(e.target.value.slice(0, CAPTION_MAX_LENGTH))}
+            placeholder="caption (optional)"
+            className="mb-3 w-full rounded-card-sm border-2 border-ink bg-paper px-3 py-2.5 font-body text-ink outline-none placeholder:text-ink/35"
+          />
+          {error && <p className="mb-2 text-center text-sm text-orange-dark">{error}</p>}
+          <div className="flex gap-3">
+            <Button variant="ghost" className="flex-1" onClick={() => setPhase("preview")}>
+              back
+            </Button>
+            <Button className="flex-1" onClick={post}>
+              post
             </Button>
           </div>
         </div>

@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { usePeople } from "@/contexts/PersonContext";
-import { ensureClockSynced, syncedNow } from "@/lib/clockSync";
-import { findOpenSetlogSlot, listenMySetlogClips, listenSetlogPrompts, todaySetlogDate } from "@/lib/setlog";
-import type { SetlogPromptsDay } from "@/lib/types";
+import { currentSetlogSlotId, listenSetlogSlot } from "@/lib/setlog";
+import type { SetlogSlot } from "@/lib/types";
 import { CaptureFlow } from "@/components/setlog/CaptureFlow";
 import { useSetlogCountdown } from "@/components/setlog/useSetlogCountdown";
 
@@ -15,50 +14,48 @@ import { useSetlogCountdown } from "@/components/setlog/useSetlogCountdown";
  * recording flow once they're back in the app.
  */
 export function SetlogPromptWatcher() {
-  const { activePersonId } = usePeople();
-  const date = todaySetlogDate();
+  const { activePersonId, activePerson } = usePeople();
 
-  const [prompts, setPrompts] = useState<SetlogPromptsDay | null>(null);
-  const [mySlotIds, setMySlotIds] = useState<Set<string>>(new Set());
-  const [now, setNow] = useState(() => syncedNow());
+  const [slotId, setSlotId] = useState<string | null>(() => currentSetlogSlotId());
+  const [slot, setSlot] = useState<SetlogSlot | null>(null);
   // Which open slot's capture flow the person has closed back down to a
   // banner -- tracked as a slot id (not a plain boolean) so a *new* slot
   // opening always starts back in the full capture flow rather than
   // inheriting the previous slot's dismissed state.
   const [dismissedSlotId, setDismissedSlotId] = useState<string | null>(null);
 
+  // The "current" slot changes at the top of every hour with no external
+  // event to react to, so just recheck periodically.
   useEffect(() => {
-    void ensureClockSynced();
-  }, []);
-
-  useEffect(() => listenSetlogPrompts(date, setPrompts), [date]);
-
-  useEffect(() => {
-    if (!activePersonId) return;
-    return listenMySetlogClips(date, activePersonId, (clips) => {
-      setMySlotIds(new Set(clips.map((c) => c.slotId)));
-    });
-  }, [date, activePersonId]);
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(syncedNow()), 1000);
+    const id = setInterval(() => setSlotId(currentSetlogSlotId()), 15_000);
     return () => clearInterval(id);
   }, []);
 
-  const openSlot = findOpenSetlogSlot(prompts, mySlotIds, now);
-  const countdown = useSetlogCountdown(openSlot);
-  // Defaults to the full capture flow (not the banner) the moment a slot
-  // opens, since dismissedSlotId can only ever equal a *previous* slot's id.
+  useEffect(() => {
+    if (!slotId) return;
+    return listenSetlogSlot(slotId, setSlot);
+  }, [slotId]);
+
+  // slotId flipping to null (e.g. active hours just ended) doesn't clear
+  // `slot` state directly -- that would mean calling setState unconditionally
+  // in an effect body -- so gate its use here instead.
+  const effectiveSlot = slotId ? slot : null;
+  const countdown = useSetlogCountdown(!!effectiveSlot);
+  const alreadyPosted = !!(
+    activePersonId && effectiveSlot?.submittedPersonIds.includes(activePersonId)
+  );
+  const openSlot = effectiveSlot && !alreadyPosted && countdown.isOpen ? effectiveSlot : null;
   const showCapture = !!openSlot && dismissedSlotId !== openSlot.id;
 
-  if (!activePersonId || !openSlot) return null;
+  if (!activePersonId || !activePerson || !openSlot) return null;
 
   if (showCapture) {
     return (
       <CaptureFlow
         personId={activePersonId}
-        date={date}
+        personName={activePerson.name}
         slotId={openSlot.id}
+        slotHour={openSlot.hour}
         remainingLabel={countdown.label}
         isWindowOpen={countdown.isOpen}
         onDone={() => setDismissedSlotId(openSlot.id)}

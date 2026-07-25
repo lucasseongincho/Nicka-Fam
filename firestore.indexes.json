@@ -1,10 +1,26 @@
 {
   "indexes": [
     {
-      "collectionGroup": "setlogClips",
+      "collectionGroup": "setlogSlots",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "date", "order": "ASCENDING" },
+        { "fieldPath": "hour", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "setlogComments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clipId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "setlogComments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "slotId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     }
