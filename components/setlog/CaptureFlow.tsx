@@ -11,7 +11,14 @@ const CLIP_DURATION_MS = 4000;
 const MAX_RETAKES = 1;
 const CAPTION_MAX_LENGTH = 140;
 
+// Safari reports the bare "video/mp4" as supported but often reports the
+// codec-qualified variant ("video/mp4;codecs=h264,aac") as NOT supported,
+// which used to make pickMimeType() skip straight past both mp4 options and
+// fall through to "" -- letting Safari record with an unrequested/undefined
+// format. Bare "video/mp4" has to come first so Safari actually gets an
+// explicit, valid mimeType instead of an implicit default.
 const MIME_CANDIDATES = [
+  "video/mp4",
   "video/mp4;codecs=h264,aac",
   "video/webm;codecs=vp9,opus",
   "video/webm;codecs=vp8,opus",
