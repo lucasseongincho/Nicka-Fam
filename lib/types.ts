@@ -356,16 +356,20 @@ export interface VoteSession {
 
 /**
  * One doc per hourly slot per day in `setlogSlots`, id = "{date}_h{HH}"
- * (e.g. "2026-07-25_h10"). Slots only ever exist for hours inside the
- * active window (6am-11pm ET) -- the tick route creates one lazily the
- * first time it observes the clock has reached that hour, and fires the
- * "time to capture your moment!" push in that same beat. No merge step
- * exists in this design -- each person's clip stays its own standalone doc.
+ * (e.g. "2026-07-25_h10"). Every hour of the day (0-23) gets a slot -- the
+ * tick route lazily creates the doc the first time it observes the clock
+ * has reached that hour (or a person's own submission creates it first, if
+ * they beat the tick to it). `notifiedAt` is only ever set for hours inside
+ * the 6am-11pm ET notification window, where the tick also fires the "time
+ * to capture your moment!" push in that same beat -- null for every other
+ * hour, which is still fully recordable, just silent. No merge step exists
+ * in this design -- each person's clip stays its own standalone doc.
  */
 export interface SetlogSlot {
   id: string;
   date: string;
   hour: number;
+  /** Set only when this slot's hour is inside the 6am-11pm ET notification window and the push has fired; null otherwise (including every recordable-but-silent overnight hour). */
   notifiedAt: Timestamp | null;
   /** personIds who've posted a clip for this slot -- denormalized so the feed can tell who's still "waiting" without a second query. */
   submittedPersonIds: string[];

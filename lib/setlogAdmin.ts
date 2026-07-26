@@ -1,6 +1,6 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { adminApp, sendCategoryNotification } from "@/lib/pushAdmin";
-import { etDateString, etHour, isWithinActiveHours, setlogSlotId } from "@/lib/setlogTime";
+import { etDateString, etHour, isWithinNotifyHours, setlogSlotId } from "@/lib/setlogTime";
 
 // Server-only module -- same firebase-admin/no-Blaze-plan constraints as
 // lib/pushAdmin.ts. Driven by app/api/setlog/tick, which an external free
@@ -13,23 +13,40 @@ import { etDateString, etHour, isWithinActiveHours, setlogSlotId } from "@/lib/s
 // slot creates that slot's doc and fires its "time to capture" push.
 
 /**
- * Lazily creates the current ET hour's slot doc (if we're inside active
- * hours and it doesn't exist yet) inside a transaction, so two overlapping
- * ticks can't both create it and thus double-send the notification. Returns
- * whether this call is the one that created it.
+ * Lazily creates the current ET hour's slot doc if it doesn't exist yet --
+ * every hour of the day gets one, not just the notification window -- and
+ * sends the "time to capture" push the first time a slot inside the
+ * notification window (6am-11pm ET) gets its `notifiedAt` set. Runs inside a
+ * transaction so two overlapping ticks can't double-send. Gating on
+ * `notifiedAt` specifically (not mere doc existence) means a person who
+ * opens the app and records before this tick ever runs -- which
+ * pre-creates the doc via submitSetlogClip's upsert -- still gets the rest
+ * of the group notified once this tick catches up. Returns whether this
+ * call is the one that sent the notification.
  */
 async function ensureCurrentSlot(db: FirebaseFirestore.Firestore, now: Date): Promise<boolean> {
   const hour = etHour(now);
-  if (!isWithinActiveHours(hour)) return false;
-
   const date = etDateString(now);
   const slotId = setlogSlotId(date, hour);
   const ref = db.collection("setlogSlots").doc(slotId);
+  const shouldNotify = isWithinNotifyHours(hour);
 
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
-    if (snap.exists) return false;
-    tx.set(ref, { date, hour, notifiedAt: now, submittedPersonIds: [] });
+    const alreadyNotified = snap.exists && !!snap.data()?.notifiedAt;
+    if (alreadyNotified || !shouldNotify) {
+      if (!snap.exists) {
+        tx.set(ref, { date, hour, notifiedAt: null, submittedPersonIds: [] });
+      }
+      return false;
+    }
+    // merge, and only seed submittedPersonIds on a brand-new doc -- a plain
+    // overwrite here could stomp an array a racing client upsert just wrote.
+    tx.set(
+      ref,
+      { date, hour, notifiedAt: now, ...(snap.exists ? {} : { submittedPersonIds: [] }) },
+      { merge: true },
+    );
     return true;
   });
 }
@@ -50,9 +67,9 @@ export async function runSetlogTick(): Promise<SetlogTickResult> {
 
   const db = getFirestore(app);
   const now = new Date();
-  const created = await ensureCurrentSlot(db, now);
+  const notified = await ensureCurrentSlot(db, now);
 
-  if (created) {
+  if (notified) {
     await sendCategoryNotification({
       category: "setlog",
       actorId: "__setlog_system__",
@@ -62,5 +79,5 @@ export async function runSetlogTick(): Promise<SetlogTickResult> {
     });
   }
 
-  return { ranAdmin: true, notifiedNewSlot: created };
+  return { ranAdmin: true, notifiedNewSlot: notified };
 }

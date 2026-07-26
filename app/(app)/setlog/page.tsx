@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePeople } from "@/contexts/PersonContext";
 import {
   currentSetlogSlotId,
@@ -9,7 +9,7 @@ import {
   listenSetlogSlotsForDate,
   todaySetlogDate,
 } from "@/lib/setlog";
-import { formatHourLabel } from "@/lib/setlogTime";
+import { formatHourLabel, parseSetlogSlotId } from "@/lib/setlogTime";
 import type { SetlogClip, SetlogSlot } from "@/lib/types";
 import { Mascot } from "@/components/ui/Mascot";
 import { CaptureFlow } from "@/components/setlog/CaptureFlow";
@@ -49,6 +49,21 @@ export default function SetlogPage() {
 
   useEffect(() => listenSetlogSlotsForDate(date, setSlots), [date]);
 
+  // Every hour has a recordable slot, but its Firestore doc is only created
+  // lazily -- by the once-a-minute tick cron, or by someone's own submission
+  // -- so there's always a window (up to ~a minute at the top of the hour,
+  // and potentially the whole hour if nobody's tick has run yet) where the
+  // real doc doesn't exist. Synthesizing today's current-hour slot here means
+  // the placeholder row is never missing while viewing today, regardless of
+  // whether the doc has actually landed yet.
+  const displaySlots = useMemo(() => {
+    if (date !== todaySetlogDate()) return slots;
+    const currentId = currentSetlogSlotId();
+    if (slots.some((s) => s.id === currentId)) return slots;
+    const { hour } = parseSetlogSlotId(currentId);
+    return [...slots, { id: currentId, date, hour, notifiedAt: null, submittedPersonIds: [] }];
+  }, [slots, date]);
+
   // Default to the most recent slot whenever a *new* date's slots first
   // arrive -- most relevant for today (the current hour) and for past days
   // (the day's last slot) alike. Only resets on an actual date change, not
@@ -56,10 +71,10 @@ export default function SetlogPage() {
   useEffect(() => {
     if (lastLoadedDate.current === date) return;
     lastLoadedDate.current = date;
-    setSlotIndex(Math.max(0, slots.length - 1));
-  }, [date, slots]);
+    setSlotIndex(Math.max(0, displaySlots.length - 1));
+  }, [date, displaySlots]);
 
-  const slot = slots[slotIndex] ?? null;
+  const slot = displaySlots[slotIndex] ?? null;
 
   useEffect(() => {
     if (!slot) return;
@@ -109,7 +124,7 @@ export default function SetlogPage() {
         </button>
       </div>
 
-      {slots.length === 0 ? (
+      {displaySlots.length === 0 ? (
         <div className="flex flex-col items-center px-2.5 pt-10 text-center">
           <div className="mb-4.5">
             <Mascot size={84} color="teal" mouth />
@@ -118,9 +133,7 @@ export default function SetlogPage() {
             nothing here yet
           </p>
           <p className="max-w-[240px] text-sm leading-relaxed text-ink/55">
-            {date === todaySetlogDate()
-              ? "hourly prompts start at 6am — check back once the first one fires."
-              : "no setlog activity on this day."}
+            no setlog activity on this day.
           </p>
         </div>
       ) : (
@@ -139,8 +152,8 @@ export default function SetlogPage() {
               {isCurrentSlot && <span className="ml-1.5 text-xs text-orange">· live</span>}
             </p>
             <button
-              onClick={() => setSlotIndex((i) => Math.min(slots.length - 1, i + 1))}
-              disabled={slotIndex >= slots.length - 1}
+              onClick={() => setSlotIndex((i) => Math.min(displaySlots.length - 1, i + 1))}
+              disabled={slotIndex >= displaySlots.length - 1}
               className="cursor-pointer text-lg text-ink/50 disabled:opacity-20"
               aria-label="next slot"
             >

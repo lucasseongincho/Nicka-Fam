@@ -7,9 +7,13 @@
  */
 
 export const SETLOG_TIMEZONE = "America/New_York";
-/** Active window is 6am-11pm ET inclusive -- an hourly prompt fires at the top of each of these hours, no notifications overnight. */
-export const SETLOG_FIRST_HOUR = 6;
-export const SETLOG_LAST_HOUR = 23;
+/**
+ * Notification window is 6am-11pm ET inclusive -- an hourly push fires at
+ * the top of each of these hours, none overnight. Every hour of the day
+ * (0-23) still gets its own recordable slot; this only gates the push.
+ */
+export const SETLOG_NOTIFY_FIRST_HOUR = 6;
+export const SETLOG_NOTIFY_LAST_HOUR = 23;
 
 /** "2026-07-24" for the given instant, as read in SETLOG_TIMEZONE. */
 export function etDateString(date: Date): string {
@@ -33,12 +37,18 @@ export function etHour(date: Date): number {
   return h === 24 ? 0 : h;
 }
 
-export function isWithinActiveHours(hour: number): boolean {
-  return hour >= SETLOG_FIRST_HOUR && hour <= SETLOG_LAST_HOUR;
+export function isWithinNotifyHours(hour: number): boolean {
+  return hour >= SETLOG_NOTIFY_FIRST_HOUR && hour <= SETLOG_NOTIFY_LAST_HOUR;
 }
 
 export function setlogSlotId(date: string, hour: number): string {
   return `${date}_h${String(hour).padStart(2, "0")}`;
+}
+
+/** Inverse of setlogSlotId. */
+export function parseSetlogSlotId(slotId: string): { date: string; hour: number } {
+  const [date, hourPart] = slotId.split("_h");
+  return { date, hour: Number(hourPart) };
 }
 
 /** 13 -> "1pm", 0 -> "12am", 12 -> "12pm" -- used for both the slot arrow label and posting notifications. */

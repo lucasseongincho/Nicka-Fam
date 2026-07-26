@@ -7,6 +7,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   Timestamp,
   updateDoc,
   where,
@@ -16,7 +17,7 @@ import {
   etDateString,
   etEndOfDayUtc,
   etHour,
-  isWithinActiveHours,
+  parseSetlogSlotId,
   setlogSlotId,
 } from "@/lib/setlogTime";
 import type { SetlogClip, SetlogComment, SetlogSlot } from "@/lib/types";
@@ -25,12 +26,10 @@ export function todaySetlogDate(): string {
   return etDateString(new Date());
 }
 
-/** The slot id someone could currently be recording into, or null outside active hours. */
-export function currentSetlogSlotId(): string | null {
+/** Every hour of the day has its own recordable slot -- the id someone is currently recording into if they open the app right now. */
+export function currentSetlogSlotId(): string {
   const now = new Date();
-  const hour = etHour(now);
-  if (!isWithinActiveHours(hour)) return null;
-  return setlogSlotId(etDateString(now), hour);
+  return setlogSlotId(etDateString(now), etHour(now));
 }
 
 export function listenSetlogSlot(slotId: string, callback: (slot: SetlogSlot | null) => void) {
@@ -105,9 +104,15 @@ export async function submitSetlogClip(
     editableUntil,
   });
 
-  await updateDoc(doc(db, "setlogSlots", slotId), {
-    submittedPersonIds: arrayUnion(personId),
-  });
+  // setDoc+merge rather than updateDoc -- someone can post before the tick's
+  // once-a-minute cron has lazily created this hour's slot doc, so it may
+  // not exist yet (updateDoc would throw NOT_FOUND in that case).
+  const { date, hour } = parseSetlogSlotId(slotId);
+  await setDoc(
+    doc(db, "setlogSlots", slotId),
+    { date, hour, submittedPersonIds: arrayUnion(personId) },
+    { merge: true },
+  );
 
   return clipRef.id;
 }

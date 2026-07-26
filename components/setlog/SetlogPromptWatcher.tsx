@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePeople } from "@/contexts/PersonContext";
 import { currentSetlogSlotId, listenSetlogSlot } from "@/lib/setlog";
+import { etHour, isWithinNotifyHours } from "@/lib/setlogTime";
 import type { SetlogSlot } from "@/lib/types";
 import { CaptureFlow } from "@/components/setlog/CaptureFlow";
 import { useSetlogCountdown } from "@/components/setlog/useSetlogCountdown";
@@ -18,6 +19,11 @@ export function SetlogPromptWatcher() {
 
   const [slotId, setSlotId] = useState<string | null>(() => currentSetlogSlotId());
   const [slot, setSlot] = useState<SetlogSlot | null>(null);
+  // Every hour has a recordable slot, but this unprompted nag banner should
+  // only surface during the same 6am-11pm window the push notification
+  // itself respects -- otherwise it'd nag people at 3am for an hour they
+  // were never notified about.
+  const [notifyWindowOpen, setNotifyWindowOpen] = useState(() => isWithinNotifyHours(etHour(new Date())));
   // Which open slot's capture flow the person has closed back down to a
   // banner -- tracked as a slot id (not a plain boolean) so a *new* slot
   // opening always starts back in the full capture flow rather than
@@ -27,7 +33,10 @@ export function SetlogPromptWatcher() {
   // The "current" slot changes at the top of every hour with no external
   // event to react to, so just recheck periodically.
   useEffect(() => {
-    const id = setInterval(() => setSlotId(currentSetlogSlotId()), 15_000);
+    const id = setInterval(() => {
+      setSlotId(currentSetlogSlotId());
+      setNotifyWindowOpen(isWithinNotifyHours(etHour(new Date())));
+    }, 15_000);
     return () => clearInterval(id);
   }, []);
 
@@ -44,7 +53,8 @@ export function SetlogPromptWatcher() {
   const alreadyPosted = !!(
     activePersonId && effectiveSlot?.submittedPersonIds.includes(activePersonId)
   );
-  const openSlot = effectiveSlot && !alreadyPosted && countdown.isOpen ? effectiveSlot : null;
+  const openSlot =
+    effectiveSlot && !alreadyPosted && countdown.isOpen && notifyWindowOpen ? effectiveSlot : null;
   const showCapture = !!openSlot && dismissedSlotId !== openSlot.id;
 
   if (!activePersonId || !activePerson || !openSlot) return null;
