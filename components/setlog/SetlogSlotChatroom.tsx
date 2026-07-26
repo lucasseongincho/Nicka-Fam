@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
-import { listenSetlogClipsForSlot, listenSetlogCommentsForSlot } from "@/lib/setlog";
+import { listenSetlogClipsForSlot, listenSetlogCommentsForSlot, toPlayableClipUrl } from "@/lib/setlog";
 import { formatHourLabel } from "@/lib/setlogTime";
 import type { Person, SetlogClip, SetlogComment } from "@/lib/types";
 
@@ -90,7 +90,7 @@ export function SetlogSlotChatroom({
                     {nameOf(item.clip.personId)}
                   </p>
                   <video
-                    src={item.clip.videoUrl}
+                    src={toPlayableClipUrl(item.clip.videoUrl)}
                     autoPlay
                     muted
                     loop

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Modal } from "@/components/ui/Modal";
-import { addSetlogComment, listenSetlogCommentsForClip } from "@/lib/setlog";
+import { addSetlogComment, listenSetlogCommentsForClip, toPlayableClipUrl } from "@/lib/setlog";
 import type { Person, SetlogClip, SetlogComment } from "@/lib/types";
 
 const QUICK_EMOJI = ["😂", "❤️", "😭", "✨", "🥺"];
@@ -45,7 +45,7 @@ export function SetlogCommentSheet({
       </div>
 
       <video
-        src={clip.videoUrl}
+        src={toPlayableClipUrl(clip.videoUrl)}
         autoPlay
         muted
         loop

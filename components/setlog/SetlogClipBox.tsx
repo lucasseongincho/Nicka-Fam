@@ -2,7 +2,7 @@
 
 import { Avatar } from "@/components/ui/Avatar";
 import { Mascot } from "@/components/ui/Mascot";
-import { mascotColorForPerson } from "@/lib/setlog";
+import { mascotColorForPerson, toPlayableClipUrl } from "@/lib/setlog";
 import { formatHourLabel } from "@/lib/setlogTime";
 import type { Person, SetlogClip } from "@/lib/types";
 
@@ -58,7 +58,7 @@ export function SetlogClipBox({
         {clip ? (
           <>
             <video
-              src={clip.videoUrl}
+              src={toPlayableClipUrl(clip.videoUrl)}
               autoPlay
               muted
               loop

@@ -56,6 +56,22 @@ export function listenSetlogClipsForSlot(slotId: string, callback: (clips: Setlo
   });
 }
 
+/**
+ * Cloudinary's default delivery matches whatever container/codec the
+ * recording browser actually used, which varies -- webm on some
+ * Chrome/desktop combos, and even an mp4-labeled recording isn't guaranteed
+ * to carry an H.264 stream. iOS Safari has no webm support at all and can
+ * fail to decode non-H.264 mp4s too, so a clip recorded on one person's
+ * device can show up as an unplayable black box on someone else's iPhone.
+ * Requesting an explicit H.264/mp4 transcode via the delivery URL
+ * guarantees playback everywhere regardless of what recorded it, and works
+ * retroactively on clips already uploaded, since Cloudinary transcodes any
+ * existing asset on demand the first time this URL shape is requested.
+ */
+export function toPlayableClipUrl(videoUrl: string): string {
+  return videoUrl.replace("/video/upload/", "/video/upload/f_mp4,vc_h264/");
+}
+
 async function uploadClipToCloudinary(blob: Blob): Promise<{ url: string; publicId: string }> {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
