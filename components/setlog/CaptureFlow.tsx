@@ -70,14 +70,28 @@ export function CaptureFlow({
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [caption, setCaption] = useState("");
   const [countIn, setCountIn] = useState(4);
+  // Bumped only when we actually want a *fresh* getUserMedia stream (mount,
+  // flipping the camera, or retaking). Deliberately NOT tied to `phase` --
+  // see the effect below for why.
+  const [cameraSessionKey, setCameraSessionKey] = useState(0);
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
   };
 
+  // Acquires the camera/mic stream. This used to depend on `phase` (guarded
+  // by `if (phase !== "camera") return`), which looked like a no-op for
+  // every phase other than "camera" -- but a dependency-array change still
+  // runs the PREVIOUS effect's cleanup first, every time, regardless of
+  // what the new effect body does. The instant startRecording() flipped
+  // phase to "recording", this cleanup fired and called stopStream(),
+  // killing the live tracks the MediaRecorder had just started recording
+  // from -- which is why the clip died almost instantly with ~0 bytes of
+  // real footage. Keying this off a dedicated counter (only bumped on
+  // mount/flip/retake, never on the camera->recording transition) means
+  // recording keeps using the same live stream for its full duration.
   useEffect(() => {
-    if (phase !== "camera") return;
     let cancelled = false;
 
     (async () => {
@@ -104,7 +118,7 @@ export function CaptureFlow({
       cancelled = true;
       stopStream();
     };
-  }, [phase, facingMode]);
+  }, [cameraSessionKey, facingMode]);
 
   // Close automatically if the slot's window runs out mid-flow -- no late
   // submissions, so there's nothing useful left for the person to do here.
@@ -167,6 +181,10 @@ export function CaptureFlow({
     setPreviewUrl(null);
     setRecordedBlob(null);
     setRetakes((r) => r + 1);
+    // The stream was already stopped in recorder.onstop, so going back to
+    // "camera" needs a genuinely new getUserMedia call, not just a state
+    // flip -- bump the key to trigger the acquisition effect.
+    setCameraSessionKey((k) => k + 1);
     setPhase("camera");
   };
 
