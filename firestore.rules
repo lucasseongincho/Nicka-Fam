@@ -115,26 +115,5 @@ service cloud.firestore {
     match /voteSession/{sessionId} {
       allow read, write: if true;
     }
-
-    // One doc per hourly slot per day, id "{date}_h{HH}". Written by the
-    // server-side tick route (via firebase-admin, which bypasses these
-    // rules entirely) and read/updated by clients (submittedPersonIds),
-    // left open for the same no-auth trust reasons as every other
-    // collection in this app.
-    match /setlogSlots/{slotId} {
-      allow read, write: if true;
-    }
-
-    // One doc per posted clip -- no merge step in this design, each
-    // person's clip is its own standalone doc/video.
-    match /setlogClips/{clipId} {
-      allow read, write: if true;
-    }
-
-    // One doc per comment, on either a single clip's thread or the combined
-    // per-slot chatroom (see SetlogComment in lib/types.ts).
-    match /setlogComments/{commentId} {
-      allow read, write: if true;
-    }
   }
 }

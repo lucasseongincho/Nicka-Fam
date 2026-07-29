@@ -9,7 +9,6 @@ const META: Record<string, { title: string; sub: string }> = {
   "/split": { title: "split", sub: "who owes who, sorted" },
   "/calendar": { title: "plans", sub: "stuff we're actually doing" },
   "/photos": { title: "the goods", sub: "the shared shame folder" },
-  "/setlog": { title: "setlog", sub: "the group's day, four seconds at a time" },
   "/game": { title: "game", sub: "pick your chaos" },
   "/board": { title: "board", sub: "pin your thoughts" },
   "/vote": { title: "vote", sub: "pick the shirt" },

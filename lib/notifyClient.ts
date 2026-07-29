@@ -1,4 +1,4 @@
-export type NotifyCategory = "calendar" | "photos" | "board" | "leaderboards" | "bills" | "setlog";
+export type NotifyCategory = "calendar" | "photos" | "board" | "leaderboards" | "bills";
 
 export interface NotifyPayload {
   category: NotifyCategory;

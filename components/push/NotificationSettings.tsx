@@ -14,7 +14,6 @@ const CATEGORY_LABELS: { key: keyof NotificationPrefs; label: string }[] = [
   { key: "board", label: "bulletin board" },
   { key: "leaderboards", label: "leaderboards" },
   { key: "bills", label: "bill payments" },
-  { key: "setlog", label: "setlog prompts" },
 ];
 
 export function NotificationSettings() {

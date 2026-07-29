@@ -7,7 +7,6 @@ export interface NotificationPrefs {
   board: boolean;
   leaderboards: boolean;
   bills: boolean;
-  setlog: boolean;
 }
 
 export interface Person {
@@ -352,60 +351,4 @@ export interface DesignVote {
 export interface VoteSession {
   open: boolean;
   updatedAt: Timestamp;
-}
-
-/**
- * One doc per hourly slot per day in `setlogSlots`, id = "{date}_h{HH}"
- * (e.g. "2026-07-25_h10"). Every hour of the day (0-23) gets a slot -- the
- * tick route lazily creates the doc the first time it observes the clock
- * has reached that hour (or a person's own submission creates it first, if
- * they beat the tick to it). `notifiedAt` is only ever set for hours inside
- * the 6am-11pm ET notification window, where the tick also fires the "time
- * to capture your moment!" push in that same beat -- null for every other
- * hour, which is still fully recordable, just silent. No merge step exists
- * in this design -- each person's clip stays its own standalone doc.
- */
-export interface SetlogSlot {
-  id: string;
-  date: string;
-  hour: number;
-  /** Set only when this slot's hour is inside the 6am-11pm ET notification window and the push has fired; null otherwise (including every recordable-but-silent overnight hour). */
-  notifiedAt: Timestamp | null;
-  /** personIds who've posted a clip for this slot -- denormalized so the feed can tell who's still "waiting" without a second query. */
-  submittedPersonIds: string[];
-}
-
-/**
- * One doc per submitted clip in `setlogClips`. `editableUntil` is the end
- * of the ET calendar day the clip was posted on; the caption can only be
- * edited client-side while Date.now() is still before that instant (see
- * isClipEditable in lib/setlog.ts).
- */
-export interface SetlogClip {
-  id: string;
-  personId: string;
-  slotId: string;
-  videoUrl: string;
-  /** Cloudinary public_id, kept for reference (deletion isn't wired up). */
-  publicId: string;
-  caption: string;
-  createdAt: Timestamp;
-  editableUntil: Timestamp;
-}
-
-/**
- * One doc per comment in `setlogComments`. Belongs to exactly one clip
- * (clipId) -- used for that clip's own comment view -- but also carries
- * `slotId` denormalized purely so the combined slot chatroom (every clip's
- * comments in one chronological feed, see SetlogSlotChatroom) can run a
- * single `where("slotId", "==", ...)` query instead of an `in` query across
- * up to 6 clipIds.
- */
-export interface SetlogComment {
-  id: string;
-  clipId: string;
-  slotId: string;
-  personId: string;
-  text: string;
-  createdAt: Timestamp;
 }

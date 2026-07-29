@@ -3,7 +3,7 @@ import type { NotifyCategory } from "@/lib/notifyClient";
 
 export const runtime = "nodejs";
 
-const CATEGORIES: NotifyCategory[] = ["calendar", "photos", "board", "leaderboards", "bills", "setlog"];
+const CATEGORIES: NotifyCategory[] = ["calendar", "photos", "board", "leaderboards", "bills"];
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
