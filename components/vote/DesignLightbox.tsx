@@ -19,6 +19,7 @@ export function DesignLightbox({
   activePersonId,
   isMyVote,
   canVote,
+  roundEligible,
   canRemoveDesign,
   onToggleVote,
   onRemoveDesign,
@@ -29,6 +30,7 @@ export function DesignLightbox({
   activePersonId: string;
   isMyVote: boolean;
   canVote: boolean;
+  roundEligible: boolean;
   canRemoveDesign: boolean;
   onToggleVote: () => void;
   onRemoveDesign: () => void;
@@ -84,6 +86,11 @@ export function DesignLightbox({
           ) : (
             <Button onClick={onToggleVote}>vote for this design</Button>
           ))}
+        {!roundEligible && (
+          <p className="rounded-chip border-2 border-ink/15 bg-paper px-3 py-2 text-center text-xs font-medium text-ink/45">
+            didn&apos;t make it to round 2 — voting&apos;s closed for this design
+          </p>
+        )}
         {canRemoveDesign && (
           <Button variant="ghost" className="text-orange-dark" onClick={onRemoveDesign}>
             remove my design

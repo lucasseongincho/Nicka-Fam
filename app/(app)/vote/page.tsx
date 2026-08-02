@@ -69,7 +69,7 @@ export default function VotePage() {
   const votingOpen = session?.open ?? true;
 
   const toggleMyVote = async (design: VoteDesign) => {
-    if (!votingOpen) return;
+    if (!votingOpen || design.eligibleRound2 !== true) return;
     const isCurrentlyVoted = myVote?.designIds.includes(design.id) ?? false;
     await toggleVote(design.id, activePersonId, isCurrentlyVoted);
     setViewingDesignId(null);
@@ -179,7 +179,8 @@ export default function VotePage() {
           people={people}
           activePersonId={activePersonId}
           isMyVote={myVote?.designIds.includes(viewingDesign.id) ?? false}
-          canVote={votingOpen}
+          canVote={votingOpen && viewingDesign.eligibleRound2 === true}
+          roundEligible={viewingDesign.eligibleRound2 === true}
           canRemoveDesign={
             votingOpen &&
             viewingDesign.voteCount === 0 &&

@@ -11,12 +11,14 @@ export function DesignCard({
   isMyVote: boolean;
   onOpen: () => void;
 }) {
+  const roundEligible = design.eligibleRound2 === true;
+
   return (
     <button
       onClick={onOpen}
       className={`relative block w-full cursor-pointer overflow-hidden rounded-card border-2 bg-card text-left shadow-card ${
         isMyVote ? "border-orange" : "border-ink"
-      }`}
+      } ${roundEligible ? "" : "opacity-60"}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -28,6 +30,12 @@ export function DesignCard({
       {isMyVote && (
         <div className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-ink bg-orange text-xs font-bold text-card">
           ✓
+        </div>
+      )}
+
+      {!roundEligible && (
+        <div className="absolute left-1.5 top-1.5 rounded-chip border-2 border-ink bg-paper px-1.5 py-0.5 text-[10px] font-semibold text-ink/55">
+          round 1
         </div>
       )}
 

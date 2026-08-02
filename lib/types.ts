@@ -318,6 +318,8 @@ export interface VoteDesign {
   voteCount: number;
   /** Denormalized count of this design's comments subcollection. Absent on legacy docs -- treat as 0. */
   commentCount?: number;
+  /** Set by the one-time round-2 migration (scripts/round2Reset.mjs) -- true for round 1's top-voted designs, false for the rest. Absent on designs uploaded after that migration (e.g. during round 2 itself) -- treat as false, since round 2 is deliberately scoped to round 1's top picks only. */
+  eligibleRound2?: boolean;
   createdAt: Timestamp;
 }
 

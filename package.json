@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "round2-reset": "node scripts/round2Reset.mjs"
   },
   "dependencies": {
     "firebase": "^12.16.0",
