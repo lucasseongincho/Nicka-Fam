@@ -125,6 +125,12 @@ export default function GamePage() {
         emoji="🫧"
         onClick={() => router.push("/game/bubble-bobble")}
       />
+      <GameCard
+        title="Bubble Shooter"
+        subtitle="solo · aim and pop"
+        iconSrc="/AEGIS/Bon.png"
+        onClick={() => router.push("/game/bubble-shooter")}
+      />
     </div>
   );
 }

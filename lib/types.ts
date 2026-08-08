@@ -279,6 +279,16 @@ export interface BubbleBobbleScoreRecord {
 }
 
 /**
+ * Bubble Shooter (Bust-a-Move style aim-and-pop game). Solo play, same
+ * one-doc-per-person shape as SuikaScoreRecord -- see `bubbleShooterScores`.
+ */
+export interface BubbleShooterScoreRecord {
+  personId: string;
+  bestScore: number;
+  updatedAt: Timestamp;
+}
+
+/**
  * Bulletin board post -- one doc per thought in `bulletinPosts`, newest
  * first. `commentCount` is denormalized (kept in sync when comments are
  * added/removed) the same way Bill.roundCount is, so the feed can show a

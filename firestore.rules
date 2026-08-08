@@ -62,6 +62,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // One doc per person, keyed by personId -- their best-ever Bubble Shooter run.
+    match /bubbleShooterScores/{personId} {
+      allow read, write: if true;
+    }
+
     match /bulletinPosts/{postId} {
       allow read, write: if true;
 
